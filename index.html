@@ -58,7 +58,7 @@
   --td: #ffffff;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { width: 100%; height: 100%; overflow: hidden; background: #000000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #ffffff; }
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -90,7 +90,8 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000000; f
   background: transparent; border: none; outline: none;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; user-select: none; touch-action: none;
-  transform: none;
+  transform: translateZ(0);
+  -webkit-tap-highlight-color: transparent;
 }
 #toggleUiBtn img {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;
