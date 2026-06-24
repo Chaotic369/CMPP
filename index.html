@@ -100,14 +100,14 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000000; f
 }
 #toggleUiBtn .btn-icon-rest {
   opacity: 1; transform: scale(1);
-  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.5));
+  filter: drop-shadow(1px 0 0 #000) drop-shadow(-1px 0 0 #000) drop-shadow(0 1px 0 #000) drop-shadow(0 -1px 0 #000);
 }
 #toggleUiBtn .btn-icon-open {
-  opacity: 0; transform: scale(0.85);
-  filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.8));
+  opacity: 0; transform: scale(1);
+  filter: drop-shadow(1px 0 0 #000) drop-shadow(-1px 0 0 #000) drop-shadow(0 1px 0 #000) drop-shadow(0 -1px 0 #000);
 }
 #toggleUiBtn.active .btn-icon-rest {
-  opacity: 0; transform: scale(0.85);
+  opacity: 0; transform: scale(1);
 }
 #toggleUiBtn.active .btn-icon-open {
   opacity: 1; transform: scale(1);
@@ -285,7 +285,7 @@ button.btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; c
 <div id="menu-backdrop"></div>
 <div id="toggleUiBtn">
   <img class="btn-icon-rest" src="https://fxnrugbvbfyamtrfmjea.supabase.co/storage/v1/object/public/docs/1782322679837_20260624_110419.png" alt="Rest">
-  <img class="btn-icon-open" src="https://fxnrugbvbfyamtrfmjea.supabase.co/storage/v1/object/public/docs/1782322688674_20260624_105907.png" alt="Open">
+  <img class="btn-icon-open" src="https://fxnrugbvbfyamtrfmjea.supabase.co/storage/v1/object/public/docs/1782327068690_20260625_122005.png" alt="Open">
 </div>
 
 <div id="app-menu">
