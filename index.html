@@ -427,7 +427,7 @@ var ghRepo = '';
 var ghBranch = 'main';
 var ghFilePath = 'index.html';
 var ghRepos = [];
-var repoCollapsed = localStorage.getItem('repo_collapsed') === 'true';
+var repoCollapsed = true;
 
 let dragSrcEl = null;
 window.nestedExpanded = window.nestedExpanded || {};
@@ -1390,6 +1390,12 @@ function toggleMenu() {
   $toggleBtn.classList.toggle('active', isOpen);
   $backdrop.classList.toggle('open', isOpen);
   if (isOpen) {
+    // Always reset to mini sidebar when opening
+    repoCollapsed = true;
+    document.getElementById('fileTreeContainer').style.display = 'none';
+    document.getElementById('repoTabsContainer').classList.add('expanded');
+    updateRepoSidebar();
+    
     // Force a position refresh the moment it opens to account for layout shifts
     updateMenuPosition();
   }
