@@ -249,9 +249,9 @@ button.btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; c
 
 <div id="app-menu">
   <div id="repoSidebar">
-    <div style="display:flex; flex-direction:column; gap:8px;">
-      <button id="repoToggleBtn" class="btn" title="Toggle Sidebar">></button>
-      <button id="repoAddBtn" class="btn" title="Create New Repo" style="display:none;"><i class="fa-solid fa-folder-plus"></i></button>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button id="repoToggleBtn" class="btn" title="Toggle Sidebar">&lt;</button>
+        <button id="repoAddBtn" class="btn" title="Create New Repo" style="display:none;"><i class="fa-solid fa-folder-plus"></i></button>
       <button id="fileAddBtn" class="btn" title="Create New File" style="display:none;" onclick="createNewFile()"><i class="fa-solid fa-file-circle-plus"></i></button>
       <button id="fileUploadBtn" class="btn" title="Upload File to Repo" style="display:none;" onclick="document.getElementById('repoUploadInput').click()"><i class="fa-solid fa-file-arrow-up"></i></button>
       <input type="file" id="repoUploadInput" style="display:none;">
@@ -553,44 +553,54 @@ function renderRepoTabs() {
     nameSpan.textContent = r.split('/')[1] || r;
     
     btn.onclick = (e) => {
-          if (isDragReady) return; 
-          const ftc = document.getElementById('fileTreeContainer');
-          const rtc = document.getElementById('repoTabsContainer');
+              if (isDragReady) return; 
+              const ftc = document.getElementById('fileTreeContainer');
+              const rtc = document.getElementById('repoTabsContainer');
       
-          if (repoCollapsed) {
-              if (ghRepo !== r) {
+              if (repoCollapsed) {
+                  repoCollapsed = false;
+                  localStorage.setItem('repo_collapsed', repoCollapsed);
+                  if (ghRepo !== r) {
+                      ghRepo = r;
+                      ghSaveConfig();
+                      renderRepoTabs();
+                      updateRepoSidebar();
+                      fetchFileTree(true);
+                  } else {
+                      updateRepoSidebar();
+                      if (typeof currentTreeFiles === 'undefined' || currentTreeFiles.length === 0) fetchFileTree(false);
+                      else { 
+                          ftc.style.display = 'flex'; 
+                          rtc.classList.remove('expanded');
+                          renderFileTreeUI(); 
+                      }
+                  }
+                  return;
+              }
+
+              if (ghRepo === r) {
+                  if (ftc.style.display === 'flex') {
+                      ftc.style.display = 'none';
+                      rtc.classList.add('expanded');
+                  } else {
+                      if (typeof currentTreeFiles === 'undefined' || currentTreeFiles.length === 0) fetchFileTree(false);
+                      else { 
+                          ftc.style.display = 'flex'; 
+                          rtc.classList.remove('expanded');
+                          renderFileTreeUI(); 
+                      }
+                  }
+                  updateRepoSidebar();
+              } else {
                   ghRepo = r;
                   ghSaveConfig();
                   renderRepoTabs();
+                  ftc.style.display = 'none';
+                  rtc.classList.add('expanded');
                   updateRepoSidebar();
                   fetchFileTree(true);
               }
-              return;
-          }
-
-          if (ghRepo === r) {
-              if (ftc.style.display === 'flex') {
-                  ftc.style.display = 'none';
-                  rtc.classList.add('expanded');
-              } else {
-                  if (typeof currentTreeFiles === 'undefined' || currentTreeFiles.length === 0) fetchFileTree(false);
-                  else { 
-                      ftc.style.display = 'flex'; 
-                      rtc.classList.remove('expanded');
-                      renderFileTreeUI(); 
-                  }
-              }
-              updateRepoSidebar();
-          } else {
-              ghRepo = r;
-              ghSaveConfig();
-              renderRepoTabs();
-              ftc.style.display = 'none';
-              rtc.classList.add('expanded');
-              updateRepoSidebar();
-              fetchFileTree(true);
-          }
-        };
+            };
 
     const actions = document.createElement('div');
     actions.className = 'repo-actions';
@@ -616,14 +626,14 @@ function updateRepoSidebar() {
   container.style.display = 'flex';
   
   if (repoCollapsed) {
-    btn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
-    container.classList.add('mini');
-    addRepoBtn.style.display = 'none';
-    addFileBtn.style.display = 'none';
-    uploadBtn.style.display = 'none';
-  } else {
-    btn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
-    container.classList.remove('mini');
+      btn.innerHTML = '<i class="fa-solid fa-chevron-left"></i>';
+      container.classList.add('mini');
+      addRepoBtn.style.display = 'none';
+      addFileBtn.style.display = 'none';
+      uploadBtn.style.display = 'none';
+    } else {
+      btn.innerHTML = '<i class="fa-solid fa-chevron-right"></i>';
+      container.classList.remove('mini');
     addRepoBtn.style.display = 'flex';
     if(ghRepo && ftc.style.display === 'flex') {
         addFileBtn.style.display = 'flex';
@@ -639,6 +649,13 @@ function updateRepoSidebar() {
 document.getElementById('repoToggleBtn').addEventListener('click', () => {
   repoCollapsed = !repoCollapsed;
   localStorage.setItem('repo_collapsed', repoCollapsed);
+  
+  // When collapsing the sidebar, reset the file tree so it's clean next time it expands
+  if (repoCollapsed) {
+    document.getElementById('fileTreeContainer').style.display = 'none';
+    document.getElementById('repoTabsContainer').classList.add('expanded');
+  }
+  
   updateRepoSidebar();
 });
 
