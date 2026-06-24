@@ -1447,10 +1447,11 @@ function updateMenuPosition() {
   $appMenu.style.left   = 'auto'; $appMenu.style.right  = 'auto';
   $appMenu.style.top    = 'auto'; $appMenu.style.bottom = 'auto';
   
-  if (isRight) { $appMenu.style.right  = (window.innerWidth - rect.right - 10) + 'px'; }
-  else         { $appMenu.style.left   = (rect.left - 10) + 'px'; }
+  // Adjusted offsets to be closer to the button
+  if (isRight) { $appMenu.style.right  = (window.innerWidth - rect.right + 10) + 'px'; }
+  else         { $appMenu.style.left   = (rect.left + 10) + 'px'; }
   
-  if (isBottom) { $appMenu.style.bottom = (window.innerHeight - rect.top - 10) + 'px'; }
+  if (isBottom) { $appMenu.style.bottom = (window.innerHeight - rect.top + 10) + 'px'; }
   else          { $appMenu.style.top    = (rect.bottom - 10) + 'px'; }
 }
 
