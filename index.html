@@ -81,8 +81,8 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000000; f
 
 #fring { position: fixed; inset: 0; z-index: 99; border: 3px solid var(--green); pointer-events: none; opacity: 0; transition: opacity .15s; }
 #fring.on { opacity: 1; }
-#menu-backdrop { position: fixed; inset: 0; z-index: 9998; display: none; background: transparent; }
-#menu-backdrop.open { display: block; }
+#menu-backdrop { position: fixed; inset: 0; z-index: 9998; background: transparent; opacity: 0; visibility: hidden; transition: opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1), visibility 0.5s; }
+#menu-backdrop.open { opacity: 1; visibility: visible; }
 
 /* Action Pop Up Button */
 #toggleUiBtn {
@@ -92,7 +92,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000000; f
   cursor: pointer; user-select: none; touch-action: none;
   color: #ffffff; font-size: 18px;
   backdrop-filter: blur(35px) saturate(200%); -webkit-backdrop-filter: blur(35px) saturate(200%);
-  box-shadow: none; transition: background 0.3s, color 0.3s;
+  box-shadow: none; transition: background 0.5s cubic-bezier(0.32, 0.72, 0, 1), color 0.5s cubic-bezier(0.32, 0.72, 0, 1);
   -webkit-tap-highlight-color: transparent;
 }
 #toggleUiBtn:hover {
@@ -103,21 +103,27 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000000; f
   color: var(--green);
 }
 #toggleUiBtn i {
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
 }
 #toggleUiBtn.active i {
   transform: rotate(45deg);
 }
 
 #app-menu {
-  position: fixed; z-index: 9999; display: none; flex-direction: row; gap: 12px;
+  position: fixed; z-index: 9999; display: flex; flex-direction: row; gap: 12px;
   background: rgba(12, 12, 12, 0.45); padding: 12px; border: none; border-radius: 24px;
   box-shadow: none; max-width: calc(100vw - 30px);
   backdrop-filter: blur(35px) saturate(200%);
   -webkit-backdrop-filter: blur(35px) saturate(200%);
-  transform: translateZ(0);
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transform: scale(0.4) translateZ(0);
+  transform-origin: bottom right;
+  transition: opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1), transform 0.5s cubic-bezier(0.32, 0.72, 0, 1), visibility 0.5s;
 }
-#app-menu.open { display: flex; }
+#app-menu.open { 
+  opacity: 1; visibility: visible; pointer-events: auto;
+  transform: scale(1) translateZ(0); 
+}
 
 /* Squircle Base Buttons */
 button.btn {
@@ -141,7 +147,7 @@ button.btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; c
 #fileUploadBtn { width: 22px; font-size: 14px; color: var(--blue); }
 
 #repoSidebar { display: flex; flex-direction: row; gap: 8px; }
-#sidebarContent { display: flex; flex-direction: column; width: 208px; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 12px; transition: width 0.2s ease; overflow-x: hidden; }
+#sidebarContent { display: flex; flex-direction: column; width: 208px; border-right: 1px solid rgba(255,255,255,0.1); padding-right: 12px; transition: width 0.5s cubic-bezier(0.32, 0.72, 0, 1); overflow-x: hidden; }
 #sidebarContent.mini { width: 50px; padding-right: 4px; align-items: center; }
 #sidebarContent.mini .repo-name { font-size: 9px; text-align: center; white-space: normal; overflow: visible; word-break: break-all; opacity: 0.7; }
 #sidebarContent.mini .repo-actions { display: none !important; }
@@ -1348,6 +1354,9 @@ function updateMenuPosition() {
   var isBottom = (rect.top  + rect.height/ 2) > (window.innerHeight/ 2);
   $appMenu.style.left   = 'auto'; $appMenu.style.right  = 'auto';
   $appMenu.style.top    = 'auto'; $appMenu.style.bottom = 'auto';
+  
+  // Dynamic transform-origin so it smoothly scales out of the button
+  $appMenu.style.transformOrigin = (isBottom ? 'bottom' : 'top') + ' ' + (isRight ? 'right' : 'left');
   
   // Adjusted offsets to be closer to the button
   if (isRight) { $appMenu.style.right  = (window.innerWidth - rect.right + 10) + 'px'; }
