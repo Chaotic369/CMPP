@@ -90,8 +90,27 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000000; f
   background: transparent; border: none; outline: none;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; user-select: none; touch-action: none;
-  transform: translateZ(0);
+  transform: none;
   -webkit-tap-highlight-color: transparent;
+}
+#toggleUiBtn img {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;
+  transition: none;
+  pointer-events: none;
+  transform: none;
+  filter: none;
+}
+#toggleUiBtn .btn-icon-rest {
+  display: block;
+}
+#toggleUiBtn .btn-icon-open {
+  display: none;
+}
+#toggleUiBtn.active .btn-icon-rest {
+  display: none;
+}
+#toggleUiBtn.active .btn-icon-open {
+  display: block;
 }
 #toggleUiBtn img {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain;
