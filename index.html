@@ -1511,9 +1511,7 @@ function toggleMenu() {
   $toggleBtn.classList.toggle('active', isOpen);
   $backdrop.classList.toggle('open', isOpen);
   if (isOpen) {
-    repoCollapsed = true;
-    localStorage.setItem('repo_collapsed', repoCollapsed);
-    updateRepoSidebar();
+    // Force a position refresh the moment it opens to account for layout shifts
     updateMenuPosition();
   }
 }
