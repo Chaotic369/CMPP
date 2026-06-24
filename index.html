@@ -570,54 +570,54 @@ function renderRepoTabs() {
     nameSpan.textContent = r.split('/')[1] || r;
     
     btn.onclick = (e) => {
-              if (isDragReady) return; 
-              const ftc = document.getElementById('fileTreeContainer');
-              const rtc = document.getElementById('repoTabsContainer');
+                  if (isDragReady) return; 
+                  const ftc = document.getElementById('fileTreeContainer');
+                  const rtc = document.getElementById('repoTabsContainer');
       
-              if (repoCollapsed) {
-                  repoCollapsed = false;
-                  localStorage.setItem('repo_collapsed', repoCollapsed);
-                  if (ghRepo !== r) {
+                  if (repoCollapsed) {
+                      if (ghRepo !== r) {
+                          ghRepo = r;
+                          ghSaveConfig();
+                          renderRepoTabs();
+                          updateRepoSidebar();
+                          fetchFileTree(true, true);
+                      } else {
+                          repoCollapsed = false;
+                          localStorage.setItem('repo_collapsed', repoCollapsed);
+                          updateRepoSidebar();
+                          if (typeof currentTreeFiles === 'undefined' || currentTreeFiles.length === 0) fetchFileTree(false);
+                          else { 
+                              ftc.style.display = 'flex'; 
+                              rtc.classList.remove('expanded');
+                              renderFileTreeUI(); 
+                          }
+                      }
+                      return;
+                  }
+
+                  if (ghRepo === r) {
+                      if (ftc.style.display === 'flex') {
+                          ftc.style.display = 'none';
+                          rtc.classList.add('expanded');
+                      } else {
+                          if (typeof currentTreeFiles === 'undefined' || currentTreeFiles.length === 0) fetchFileTree(false);
+                          else { 
+                              ftc.style.display = 'flex'; 
+                              rtc.classList.remove('expanded');
+                              renderFileTreeUI(); 
+                          }
+                      }
+                      updateRepoSidebar();
+                  } else {
                       ghRepo = r;
                       ghSaveConfig();
                       renderRepoTabs();
-                      updateRepoSidebar();
-                      fetchFileTree(true);
-                  } else {
-                      updateRepoSidebar();
-                      if (typeof currentTreeFiles === 'undefined' || currentTreeFiles.length === 0) fetchFileTree(false);
-                      else { 
-                          ftc.style.display = 'flex'; 
-                          rtc.classList.remove('expanded');
-                          renderFileTreeUI(); 
-                      }
-                  }
-                  return;
-              }
-
-              if (ghRepo === r) {
-                  if (ftc.style.display === 'flex') {
                       ftc.style.display = 'none';
                       rtc.classList.add('expanded');
-                  } else {
-                      if (typeof currentTreeFiles === 'undefined' || currentTreeFiles.length === 0) fetchFileTree(false);
-                      else { 
-                          ftc.style.display = 'flex'; 
-                          rtc.classList.remove('expanded');
-                          renderFileTreeUI(); 
-                      }
+                      updateRepoSidebar();
+                      fetchFileTree(true);
                   }
-                  updateRepoSidebar();
-              } else {
-                  ghRepo = r;
-                  ghSaveConfig();
-                  renderRepoTabs();
-                  ftc.style.display = 'none';
-                  rtc.classList.add('expanded');
-                  updateRepoSidebar();
-                  fetchFileTree(true);
-              }
-            };
+                };
 
     const actions = document.createElement('div');
     actions.className = 'repo-actions';
