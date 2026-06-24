@@ -18,7 +18,13 @@
       "src": "https://fxnrugbvbfyamtrfmjea.supabase.co/storage/v1/object/public/docs/1782328766546_IMG_20260625_004900.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable any"
+      "purpose": "any"
+    },
+    {
+      "src": "https://fxnrugbvbfyamtrfmjea.supabase.co/storage/v1/object/public/docs/1782328766546_IMG_20260625_004900.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
