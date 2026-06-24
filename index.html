@@ -611,14 +611,14 @@ function renderRepoTabs() {
                   }
                   updateRepoSidebar();
               } else {
-                  ghRepo = r;
-                  ghSaveConfig();
-                  renderRepoTabs();
-                  ftc.style.display = 'none';
-                  rtc.classList.add('expanded');
-                  updateRepoSidebar();
-                  fetchFileTree(true);
-              }
+                                ghRepo = r;
+                                ghSaveConfig();
+                                renderRepoTabs();
+                                ftc.style.display = 'flex';
+                                rtc.classList.remove('expanded');
+                                updateRepoSidebar();
+                                fetchFileTree(true, false);
+                            }
             };
 
     const actions = document.createElement('div');
@@ -1127,27 +1127,30 @@ async function fetchFileTree(autoLoad = false, silent = false) {
         currentTreeFiles = data.tree.filter(t => t.type === 'blob' && !t.path.includes('.git/'));
         
         if (autoLoad) {
-            let targetFile = currentTreeFiles.find(f => f.path.toLowerCase() === 'index.html' || f.path.toLowerCase().endsWith('/index.html')) 
-                          || currentTreeFiles.find(f => f.path.toLowerCase().endsWith('.html')) 
-                          || currentTreeFiles[0];
-            if (targetFile) {
-                ghFilePath = targetFile.path;
-                document.getElementById('ghFilePath').value = ghFilePath;
-                ghSaveConfig();
-                syncCurrentFile();
-            }
-            renderFileTreeUI();
-            ftc.style.display = 'none';
-            rtc.classList.add('expanded');
-        } else if (silent) {
-            renderFileTreeUI();
-            // Fix: Preserve the current visibility state of the file tree during background refreshes
-        } else {
-            renderFileTreeUI();
-            ftc.style.display = 'flex';
-            rtc.classList.remove('expanded');
-        }
-        updateRepoSidebar();
+                    let targetFile = currentTreeFiles.find(f => f.path.toLowerCase() === 'index.html' || f.path.toLowerCase().endsWith('/index.html')) 
+                                  || currentTreeFiles.find(f => f.path.toLowerCase().endsWith('.html')) 
+                                  || currentTreeFiles[0];
+                    if (targetFile) {
+                        ghFilePath = targetFile.path;
+                        document.getElementById('ghFilePath').value = ghFilePath;
+                        ghSaveConfig();
+                        syncCurrentFile();
+                    }
+                }
+        
+                renderFileTreeUI();
+        
+                if (!silent) {
+                    if (repoCollapsed) {
+                        ftc.style.display = 'none';
+                        rtc.classList.add('expanded');
+                    } else {
+                        ftc.style.display = 'flex';
+                        rtc.classList.remove('expanded');
+                    }
+                }
+        
+                updateRepoSidebar();
     } catch (err) {
         if (!autoLoad && !silent) {
             ftc.innerHTML = `<div style="color:var(--red); font-size:10px; padding:4px;">Failed to load tree</div>`;
