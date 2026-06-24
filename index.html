@@ -87,7 +87,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000000; f
 /* Action Pop Up Button */
 #toggleUiBtn {
   position: fixed; bottom: 30px; right: 20px; z-index: 10000; width: 42px; height: 42px; border-radius: 14px;
-  background: rgba(12, 12, 12, 0.45); border: none; outline: none;
+  background: transparent; border: none; outline: none;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; user-select: none; touch-action: none;
   color: #ffffff; font-size: 18px;
@@ -96,10 +96,10 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000000; f
   -webkit-tap-highlight-color: transparent;
 }
 #toggleUiBtn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
 }
 #toggleUiBtn.active {
-  background: rgba(255, 255, 255, 0.2);
+  background: transparent;
   color: var(--green);
 }
 #toggleUiBtn i {
@@ -260,6 +260,7 @@ button.btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; c
 
 <div id="fring"></div>
 <div id="menu-backdrop"></div>
+
 <button id="toggleUiBtn" title="Toggle Menu">
   <i class="fa-solid fa-plus"></i>
 </button>
@@ -570,54 +571,55 @@ function renderRepoTabs() {
     nameSpan.textContent = r.split('/')[1] || r;
     
     btn.onclick = (e) => {
-                  if (isDragReady) return; 
-                  const ftc = document.getElementById('fileTreeContainer');
-                  const rtc = document.getElementById('repoTabsContainer');
+              if (isDragReady) return; 
+              const ftc = document.getElementById('fileTreeContainer');
+              const rtc = document.getElementById('repoTabsContainer');
       
-                  if (repoCollapsed) {
-                      if (ghRepo !== r) {
-                          ghRepo = r;
-                          ghSaveConfig();
-                          renderRepoTabs();
-                          updateRepoSidebar();
-                          fetchFileTree(true, true);
-                      } else {
-                          repoCollapsed = false;
-                          localStorage.setItem('repo_collapsed', repoCollapsed);
-                          updateRepoSidebar();
-                          if (typeof currentTreeFiles === 'undefined' || currentTreeFiles.length === 0) fetchFileTree(false);
-                          else { 
-                              ftc.style.display = 'flex'; 
-                              rtc.classList.remove('expanded');
-                              renderFileTreeUI(); 
-                          }
-                      }
-                      return;
-                  }
-
-                  if (ghRepo === r) {
-                      if (ftc.style.display === 'flex') {
-                          ftc.style.display = 'none';
-                          rtc.classList.add('expanded');
-                      } else {
-                          if (typeof currentTreeFiles === 'undefined' || currentTreeFiles.length === 0) fetchFileTree(false);
-                          else { 
-                              ftc.style.display = 'flex'; 
-                              rtc.classList.remove('expanded');
-                              renderFileTreeUI(); 
-                          }
-                      }
-                      updateRepoSidebar();
-                  } else {
+              if (repoCollapsed) {
+                  if (ghRepo !== r) {
                       ghRepo = r;
                       ghSaveConfig();
                       renderRepoTabs();
+                      updateRepoSidebar();
+                      fetchFileTree(true, true);
+                  } else {
+                      repoCollapsed = false;
+                      localStorage.setItem('repo_collapsed', repoCollapsed);
+                      if (typeof currentTreeFiles === 'undefined' || currentTreeFiles.length === 0) {
+                          fetchFileTree(false);
+                      } else { 
+                          ftc.style.display = 'flex'; 
+                          rtc.classList.remove('expanded');
+                          renderFileTreeUI(); 
+                          updateRepoSidebar();
+                      }
+                  }
+                  return;
+              }
+
+              if (ghRepo === r) {
+                  if (ftc.style.display === 'flex') {
                       ftc.style.display = 'none';
                       rtc.classList.add('expanded');
-                      updateRepoSidebar();
-                      fetchFileTree(true);
+                  } else {
+                      if (typeof currentTreeFiles === 'undefined' || currentTreeFiles.length === 0) fetchFileTree(false);
+                      else { 
+                          ftc.style.display = 'flex'; 
+                          rtc.classList.remove('expanded');
+                          renderFileTreeUI(); 
+                      }
                   }
-                };
+                  updateRepoSidebar();
+              } else {
+                  ghRepo = r;
+                  ghSaveConfig();
+                  renderRepoTabs();
+                  ftc.style.display = 'none';
+                  rtc.classList.add('expanded');
+                  updateRepoSidebar();
+                  fetchFileTree(true);
+              }
+            };
 
     const actions = document.createElement('div');
     actions.className = 'repo-actions';
@@ -667,13 +669,20 @@ document.getElementById('repoToggleBtn').addEventListener('click', () => {
   repoCollapsed = !repoCollapsed;
   localStorage.setItem('repo_collapsed', repoCollapsed);
   
-  // When collapsing the sidebar, reset the file tree so it's clean next time it expands
   if (repoCollapsed) {
     document.getElementById('fileTreeContainer').style.display = 'none';
     document.getElementById('repoTabsContainer').classList.add('expanded');
+    updateRepoSidebar();
+  } else {
+    document.getElementById('fileTreeContainer').style.display = 'flex';
+    document.getElementById('repoTabsContainer').classList.remove('expanded');
+    if (typeof currentTreeFiles === 'undefined' || currentTreeFiles.length === 0) {
+        fetchFileTree(false);
+    } else {
+        renderFileTreeUI();
+        updateRepoSidebar();
+    }
   }
-  
-  updateRepoSidebar();
 });
 
 // Feature 1: New Repo Flow UI Toggles & Input Styling
@@ -920,7 +929,14 @@ window.createNewFile = async function() {
         ghFilePath = path;
         document.getElementById('ghFilePath').value = path;
         ghSaveConfig();
-        fetchFileTree(false, true);
+        
+        // Ensure file tree container remains open and visible when file is added
+        const ftc = document.getElementById('fileTreeContainer');
+        const rtc = document.getElementById('repoTabsContainer');
+        ftc.style.display = 'flex';
+        rtc.classList.remove('expanded');
+        
+        await fetchFileTree(false, false);
         syncCurrentFile();
     } catch (err) {
         toast('❌ Failed: ' + err.message, 'err');
@@ -960,7 +976,13 @@ document.getElementById('repoUploadInput').addEventListener('change', async func
             document.getElementById('ghFilePath').value = ghFilePath;
             ghSaveConfig();
             
-            fetchFileTree(false, true);
+            // Ensure file tree container remains open and visible when file is uploaded
+            const ftc = document.getElementById('fileTreeContainer');
+            const rtc = document.getElementById('repoTabsContainer');
+            ftc.style.display = 'flex';
+            rtc.classList.remove('expanded');
+            
+            await fetchFileTree(false, false);
             syncCurrentFile();
             
         } catch(err) {
@@ -1119,8 +1141,7 @@ async function fetchFileTree(autoLoad = false, silent = false) {
             rtc.classList.add('expanded');
         } else if (silent) {
             renderFileTreeUI();
-            ftc.style.display = 'none';
-            rtc.classList.add('expanded');
+            // Fix: Preserve the current visibility state of the file tree during background refreshes
         } else {
             renderFileTreeUI();
             ftc.style.display = 'flex';
