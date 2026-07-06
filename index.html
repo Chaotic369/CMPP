@@ -503,73 +503,112 @@ function renderRepoTabs() {
     const btn = document.createElement('div');
     btn.className = 'repo-item' + (r === ghRepo ? ' active' : '');
     btn.title = r; // Full name remains in title for clarity
-    btn.draggable = true;
-    btn.dataset.index = index;
+        btn.dataset.index = index;
 
-    let holdTimer;
-    let isDragReady = false;
+        let holdTimer;
+        let isDragReady = false;
+        let isDragging = false;
+        let startY = 0, startX = 0;
+        let clone = null;
 
-    const clearHold = () => {
-      clearTimeout(holdTimer);
-      isDragReady = false;
-      btn.classList.remove('ready-to-drag');
-    };
+        btn.addEventListener('pointerdown', function(e) {
+          if (e.button !== 0 && e.pointerType === 'mouse') return;
+          startX = e.clientX; startY = e.clientY;
+          clearTimeout(holdTimer);
+          isDragReady = false;
+          holdTimer = setTimeout(() => {
+            isDragReady = true;
+            this.classList.add('ready-to-drag');
+            if (navigator.vibrate) navigator.vibrate(50);
+            try { this.setPointerCapture(e.pointerId); } catch(err) {}
+          }, 400);
+        });
 
-    btn.addEventListener('pointerdown', function(e) {
-      if (e.button !== 0 && e.pointerType === 'mouse') return; 
-      clearHold();
-      holdTimer = setTimeout(() => {
-        isDragReady = true;
-        this.classList.add('ready-to-drag');
-      }, 500);
-    });
+        btn.addEventListener('pointermove', function(e) {
+          if (!isDragReady && holdTimer) {
+            if (Math.abs(e.clientX - startX) > 10 || Math.abs(e.clientY - startY) > 10) {
+               clearTimeout(holdTimer);
+            }
+            return;
+          }
+          if (!isDragReady) return;
 
-    btn.addEventListener('pointerup', clearHold);
-    btn.addEventListener('pointercancel', clearHold);
-    btn.addEventListener('pointerleave', clearHold);
-    btn.addEventListener('contextmenu', (e) => {
-      if(isDragReady) e.preventDefault(); 
-    });
+          if (!isDragging) {
+            isDragging = true;
+            container.style.touchAction = 'none';
+            let rect = this.getBoundingClientRect();
+        
+            clone = this.cloneNode(true);
+            clone.style.position = 'fixed';
+            clone.style.top = rect.top + 'px';
+            clone.style.left = rect.left + 'px';
+            clone.style.width = rect.width + 'px';
+            clone.style.zIndex = '99999';
+            clone.style.pointerEvents = 'none';
+            clone.style.opacity = '0.9';
+            clone.style.boxShadow = '0 10px 20px rgba(0,0,0,0.5)';
+            clone.style.background = 'rgba(255,255,255,0.15)';
+            document.body.appendChild(clone);
+        
+            this.style.opacity = '0.3';
+          }
 
-    btn.addEventListener('dragstart', function(e) {
-      if (!isDragReady) {
-        e.preventDefault(); 
-        return false;
-      }
-      dragSrcEl = this;
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/html', this.innerHTML);
-      this.style.opacity = '0.5';
-    });
-    
-    btn.addEventListener('dragover', function(e) {
-      if (e.preventDefault) e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      return false;
-    });
-    btn.addEventListener('dragenter', function(e) {
-      this.classList.add('drag-over');
-    });
-    btn.addEventListener('dragleave', function(e) {
-      this.classList.remove('drag-over');
-    });
-    btn.addEventListener('drop', function(e) {
-      if (e.stopPropagation) e.stopPropagation();
-      if (dragSrcEl !== this) {
-        let srcIndex = parseInt(dragSrcEl.dataset.index);
-        let tgtIndex = parseInt(this.dataset.index);
-        let movedItem = ghRepos.splice(srcIndex, 1)[0];
-        ghRepos.splice(tgtIndex, 0, movedItem);
-        ghSaveConfig();
-        renderRepoTabs();
-      }
-      return false;
-    });
-    btn.addEventListener('dragend', function(e) {
-      this.style.opacity = '1';
-      document.querySelectorAll('.repo-item').forEach(el => el.classList.remove('drag-over'));
-      clearHold();
-    });
+          if (isDragging && clone) {
+            clone.style.top = (e.clientY - clone.offsetHeight / 2) + 'px';
+            clone.style.left = (e.clientX - clone.offsetWidth / 2) + 'px';
+
+            let elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+            let targetRepo = elemBelow ? elemBelow.closest('.repo-item') : null;
+
+            if (targetRepo && targetRepo !== this && targetRepo.parentNode === container) {
+              let rect = targetRepo.getBoundingClientRect();
+              if (e.clientY < rect.top + rect.height / 2) {
+                container.insertBefore(this, targetRepo);
+              } else {
+                container.insertBefore(this, targetRepo.nextSibling);
+              }
+            }
+          }
+        });
+
+        const endDrag = function(e) {
+          let wasDragging = isDragging;
+          let wasReady = isDragReady;
+      
+          clearTimeout(holdTimer);
+          if (!isDragging) btn.classList.remove('ready-to-drag');
+      
+          if (wasReady) {
+             isDragReady = true; 
+             setTimeout(() => { isDragReady = false; }, 50); // delay clear to prevent unwanted clicks
+          } else {
+             isDragReady = false;
+          }
+      
+          if (wasDragging) {
+            isDragging = false;
+            if (clone) clone.remove();
+            this.style.opacity = '1';
+            container.style.touchAction = '';
+        
+            let newRepos = [];
+            container.querySelectorAll('.repo-item').forEach(el => {
+              if (el.dataset.index !== undefined) {
+                 newRepos.push(ghRepos[el.dataset.index]);
+              }
+            });
+        
+            if (newRepos.length === ghRepos.length) {
+              ghRepos = newRepos;
+              ghSaveConfig();
+            }
+            renderRepoTabs();
+          }
+        };
+
+        btn.addEventListener('pointerup', endDrag);
+        btn.addEventListener('pointercancel', endDrag);
+        btn.addEventListener('contextmenu', (e) => { if(isDragReady || isDragging) e.preventDefault(); });
 
     const nameSpan = document.createElement('span');
     nameSpan.className = 'repo-name';
