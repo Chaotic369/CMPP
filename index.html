@@ -503,123 +503,130 @@ function renderRepoTabs() {
     const btn = document.createElement('div');
     btn.className = 'repo-item' + (r === ghRepo ? ' active' : '');
     btn.title = r; // Full name remains in title for clarity
-        btn.dataset.index = index;
+            btn.dataset.index = index;
 
-        let holdTimer;
-        let isDragReady = false;
-        let isDragging = false;
-        let startY = 0, startX = 0;
-        let clone = null;
-        let pointerId = null;
+            let holdTimer;
+            let isDragReady = false;
+            let isDragging = false;
+            let startY = 0, startX = 0;
+            let clone = null;
 
-        btn.addEventListener('pointerdown', function(e) {
-          if (e.button !== 0 && e.pointerType === 'mouse') return;
-          startX = e.clientX; startY = e.clientY;
-          pointerId = e.pointerId;
-          clearTimeout(holdTimer);
-          isDragReady = false;
-          holdTimer = setTimeout(() => {
-            isDragReady = true;
-            this.classList.add('ready-to-drag');
-            if (navigator.vibrate) navigator.vibrate(50);
-            try { this.setPointerCapture(pointerId); } catch(err) {}
-          }, 400);
-        });
+            const onPointerMove = function(e) {
+              if (!isDragReady && holdTimer) {
+                if (Math.abs(e.clientX - startX) > 10 || Math.abs(e.clientY - startY) > 10) {
+                   clearTimeout(holdTimer);
+                }
+                return;
+              }
+              if (!isDragReady) return;
 
-        btn.addEventListener('pointermove', function(e) {
-          if (!isDragReady && holdTimer) {
-            if (Math.abs(e.clientX - startX) > 10 || Math.abs(e.clientY - startY) > 10) {
-               clearTimeout(holdTimer);
-            }
-            return;
-          }
-          if (!isDragReady) return;
-
-          if (!isDragging) {
-            isDragging = true;
-            let rect = this.getBoundingClientRect();
+              if (!isDragging) {
+                isDragging = true;
+                let rect = btn.getBoundingClientRect();
         
-            clone = this.cloneNode(true);
-            clone.style.position = 'fixed';
-            clone.style.top = rect.top + 'px';
-            clone.style.left = rect.left + 'px';
-            clone.style.width = rect.width + 'px';
-            clone.style.zIndex = '99999';
-            clone.style.pointerEvents = 'none';
-            clone.style.opacity = '0.9';
-            clone.style.boxShadow = '0 10px 20px rgba(0,0,0,0.5)';
-            clone.style.background = 'rgba(255,255,255,0.15)';
-            clone.style.transform = 'scale(1.05)';
-            document.body.appendChild(clone);
+                clone = btn.cloneNode(true);
+                clone.classList.add('stray-clone-guard');
+                clone.style.position = 'fixed';
+                clone.style.top = rect.top + 'px';
+                clone.style.left = rect.left + 'px';
+                clone.style.width = rect.width + 'px';
+                clone.style.zIndex = '99999';
+                clone.style.pointerEvents = 'none';
+                clone.style.opacity = '0.9';
+                clone.style.boxShadow = '0 10px 20px rgba(0,0,0,0.5)';
+                clone.style.background = 'rgba(255,255,255,0.15)';
+                clone.style.transform = 'scale(1.05)';
+                document.body.appendChild(clone);
         
-            this.style.opacity = '0.3';
-          }
+                btn.style.opacity = '0.3';
+              }
 
-          if (isDragging && clone) {
-            clone.style.top = (e.clientY - clone.offsetHeight / 2) + 'px';
-            clone.style.left = (e.clientX - clone.offsetWidth / 2) + 'px';
+              if (isDragging && clone) {
+                clone.style.top = (e.clientY - clone.offsetHeight / 2) + 'px';
+                clone.style.left = (e.clientX - clone.offsetWidth / 2) + 'px';
 
-            let elemBelow = document.elementFromPoint(e.clientX, e.clientY);
-            let targetRepo = elemBelow ? elemBelow.closest('.repo-item') : null;
+                let elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+                let targetRepo = elemBelow ? elemBelow.closest('.repo-item') : null;
 
-            if (targetRepo && targetRepo !== this && targetRepo.parentNode === container) {
-              let rect = targetRepo.getBoundingClientRect();
-              if (e.clientY < rect.top + rect.height / 2) {
-                container.insertBefore(this, targetRepo);
+                if (targetRepo && targetRepo !== btn && targetRepo.parentNode === container) {
+                  let rect = targetRepo.getBoundingClientRect();
+                  if (e.clientY < rect.top + rect.height / 2) {
+                    container.insertBefore(btn, targetRepo);
+                  } else {
+                    container.insertBefore(btn, targetRepo.nextSibling);
+                  }
+                }
+              }
+            };
+
+            const onPointerUp = function(e) {
+              window.removeEventListener('pointermove', onPointerMove);
+              window.removeEventListener('pointerup', onPointerUp);
+              window.removeEventListener('pointercancel', onPointerUp);
+          
+              let wasDragging = isDragging;
+              let wasReady = isDragReady;
+      
+              clearTimeout(holdTimer);
+              if (!isDragging) btn.classList.remove('ready-to-drag');
+      
+              if (wasReady) {
+                 isDragReady = true; 
+                 setTimeout(() => { isDragReady = false; }, 200);
               } else {
-                container.insertBefore(this, targetRepo.nextSibling);
+                 isDragReady = false;
               }
-            }
-          }
-        });
-
-        // Mobile specific: strictly prevent scrolling while holding/dragging
-        btn.addEventListener('touchmove', function(e) {
-          if (isDragReady || isDragging) {
-            if (e.cancelable) e.preventDefault();
-          }
-        }, { passive: false });
-
-        const endDrag = function(e) {
-          let wasDragging = isDragging;
-          let wasReady = isDragReady;
       
-          clearTimeout(holdTimer);
-          if (!isDragging) btn.classList.remove('ready-to-drag');
-          try { btn.releasePointerCapture(pointerId); } catch(err) {}
-      
-          if (wasReady) {
-             isDragReady = true; 
-             setTimeout(() => { isDragReady = false; }, 200); // Wait longer to block click on mobile
-          } else {
-             isDragReady = false;
-          }
-      
-          if (wasDragging) {
-            isDragging = false;
-            if (clone) clone.remove();
-            this.style.opacity = '1';
+              if (wasDragging) {
+                isDragging = false;
+                if (clone) clone.remove();
+                btn.style.opacity = '1';
         
-            let newRepos = [];
-            container.querySelectorAll('.repo-item').forEach(el => {
-              if (el.dataset.index !== undefined) {
-                 newRepos.push(ghRepos[el.dataset.index]);
+                let newRepos = [];
+                container.querySelectorAll('.repo-item').forEach(el => {
+                  if (el.dataset.index !== undefined) {
+                     newRepos.push(ghRepos[el.dataset.index]);
+                  }
+                });
+        
+                if (newRepos.length === ghRepos.length) {
+                  ghRepos = newRepos;
+                  ghSaveConfig();
+                }
+                renderRepoTabs();
               }
+          
+              // Bulletproof failsafe for mid-air artifacts
+              document.querySelectorAll('.stray-clone-guard').forEach(el => el.remove());
+            };
+
+            btn.addEventListener('pointerdown', function(e) {
+              if (e.button !== 0 && e.pointerType === 'mouse') return;
+              startX = e.clientX; startY = e.clientY;
+              clearTimeout(holdTimer);
+              isDragReady = false;
+          
+              window.addEventListener('pointermove', onPointerMove, { passive: false });
+              window.addEventListener('pointerup', onPointerUp);
+              window.addEventListener('pointercancel', onPointerUp);
+          
+              holdTimer = setTimeout(() => {
+                isDragReady = true;
+                btn.classList.add('ready-to-drag');
+                if (navigator.vibrate) navigator.vibrate(50);
+              }, 400);
             });
-        
-            if (newRepos.length === ghRepos.length) {
-              ghRepos = newRepos;
-              ghSaveConfig();
-            }
-            renderRepoTabs();
-          }
-        };
 
-        btn.addEventListener('pointerup', endDrag);
-        btn.addEventListener('pointercancel', endDrag);
-        btn.addEventListener('contextmenu', (e) => { if(isDragReady || isDragging) e.preventDefault(); });
+            // Mobile specific: strictly prevent scrolling while holding/dragging
+            btn.addEventListener('touchmove', function(e) {
+              if (isDragReady || isDragging) {
+                if (e.cancelable) e.preventDefault();
+              }
+            }, { passive: false });
 
-    const nameSpan = document.createElement('span');
+            btn.addEventListener('contextmenu', (e) => { if(isDragReady || isDragging) e.preventDefault(); });
+
+        const nameSpan = document.createElement('span');
     nameSpan.className = 'repo-name';
     // Split to show only the repo name, stripping out user/owner
     nameSpan.textContent = r.split('/')[1] || r;
