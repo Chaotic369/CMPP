@@ -336,8 +336,9 @@ button.btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; c
     <button id="astBtn" class="btn" title="AST Guard Logs" style="color:var(--amber);"><i class="fa-solid fa-brain"></i></button>
     <button id="liveSiteBtn" class="btn" title="View Live Site in Browser" style="color:var(--blue);"><i class="fa-solid fa-globe"></i></button>
     <button id="viewBtn" class="btn" title="Toggle View"><i class="fa-solid fa-eye"></i></button>
-    <button id="logBtn" class="btn" title="System Logs"><i class="fa-solid fa-file-lines"></i></button>
-    <button id="wallpaperBtn" class="btn" title="Set Workspace Wallpaper" style="color:var(--purple);"><i class="fa-solid fa-image"></i></button>
+        <button id="logBtn" class="btn" title="System Logs"><i class="fa-solid fa-file-lines"></i></button>
+        <button id="wallpaperBtn" class="btn" title="Set Workspace Wallpaper" style="color:var(--purple);"><i class="fa-solid fa-image"></i></button>
+        <button id="installBtn" class="btn" title="Install App" style="display:none; color:var(--blue);"><i class="fa-solid fa-download"></i></button>
     
     <input type="file" id="fileInput" style="display:none;" accept=".html,.htm,.js,.css,.txt,.jsx,.ts,.tsx,.vue,.php,.py,.rb,.json,.xml,.svg,.md">
   </div>
@@ -468,6 +469,22 @@ var repoCollapsed = true;
 let dragSrcEl = null;
 window.nestedExpanded = window.nestedExpanded || {};
 let currentTreeFiles = [];
+let deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBtn').style.display = 'flex';
+});
+
+document.getElementById('installBtn').addEventListener('click', async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') document.getElementById('installBtn').style.display = 'none';
+    deferredPrompt = null;
+  }
+});
 
 // Lock in any Code View edits before pushing, exporting, or checking AST
 function syncEditorToSource() {
