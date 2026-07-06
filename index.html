@@ -1667,11 +1667,33 @@ document.getElementById('fnrRepAll').addEventListener('click', () => {
   toast('✅ Replaced all occurrences');
 });
 
+$fnrFind.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (e.shiftKey) document.getElementById('fnrPrev').click();
+    else document.getElementById('fnrNext').click();
+  }
+});
+
+$fnrReplace.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    document.getElementById('fnrRep').click();
+  }
+});
+
 document.addEventListener('keydown', function(e) {
   if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
     if (viewMode === 'code' && document.getElementById('searchCodeBtn').style.display === 'flex') {
       e.preventDefault();
       document.getElementById('searchCodeBtn').click();
+    }
+  }
+  if (((e.ctrlKey || e.metaKey) && e.key === 'g') || e.key === 'F3') {
+    if (viewMode === 'code' && document.getElementById('fnrPanel').style.display === 'flex') {
+      e.preventDefault();
+      if (e.shiftKey) document.getElementById('fnrPrev').click();
+      else document.getElementById('fnrNext').click();
     }
   }
 });
