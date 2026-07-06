@@ -510,17 +510,19 @@ function renderRepoTabs() {
         let isDragging = false;
         let startY = 0, startX = 0;
         let clone = null;
+        let pointerId = null;
 
         btn.addEventListener('pointerdown', function(e) {
           if (e.button !== 0 && e.pointerType === 'mouse') return;
           startX = e.clientX; startY = e.clientY;
+          pointerId = e.pointerId;
           clearTimeout(holdTimer);
           isDragReady = false;
           holdTimer = setTimeout(() => {
             isDragReady = true;
             this.classList.add('ready-to-drag');
             if (navigator.vibrate) navigator.vibrate(50);
-            try { this.setPointerCapture(e.pointerId); } catch(err) {}
+            try { this.setPointerCapture(pointerId); } catch(err) {}
           }, 400);
         });
 
@@ -535,7 +537,6 @@ function renderRepoTabs() {
 
           if (!isDragging) {
             isDragging = true;
-            container.style.touchAction = 'none';
             let rect = this.getBoundingClientRect();
         
             clone = this.cloneNode(true);
@@ -548,6 +549,7 @@ function renderRepoTabs() {
             clone.style.opacity = '0.9';
             clone.style.boxShadow = '0 10px 20px rgba(0,0,0,0.5)';
             clone.style.background = 'rgba(255,255,255,0.15)';
+            clone.style.transform = 'scale(1.05)';
             document.body.appendChild(clone);
         
             this.style.opacity = '0.3';
@@ -571,16 +573,24 @@ function renderRepoTabs() {
           }
         });
 
+        // Mobile specific: strictly prevent scrolling while holding/dragging
+        btn.addEventListener('touchmove', function(e) {
+          if (isDragReady || isDragging) {
+            if (e.cancelable) e.preventDefault();
+          }
+        }, { passive: false });
+
         const endDrag = function(e) {
           let wasDragging = isDragging;
           let wasReady = isDragReady;
       
           clearTimeout(holdTimer);
           if (!isDragging) btn.classList.remove('ready-to-drag');
+          try { btn.releasePointerCapture(pointerId); } catch(err) {}
       
           if (wasReady) {
              isDragReady = true; 
-             setTimeout(() => { isDragReady = false; }, 50); // delay clear to prevent unwanted clicks
+             setTimeout(() => { isDragReady = false; }, 200); // Wait longer to block click on mobile
           } else {
              isDragReady = false;
           }
@@ -589,7 +599,6 @@ function renderRepoTabs() {
             isDragging = false;
             if (clone) clone.remove();
             this.style.opacity = '1';
-            container.style.touchAction = '';
         
             let newRepos = [];
             container.querySelectorAll('.repo-item').forEach(el => {
