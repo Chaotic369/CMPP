@@ -74,7 +74,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000000; f
 
 #codeView {
   position: fixed; inset: 0; width: 100%; height: calc(100% - 22px);
-  background: rgba(0, 0, 0, 0.6); color: #ffffff; font-family: 'JetBrains Mono', monospace; font-size: 13px;
+  background: #000000; color: #ffffff; font-family: 'JetBrains Mono', monospace; font-size: 13px;
   padding: 20px; border: none; outline: none; resize: none; z-index: 1; display: none; white-space: pre; overflow: auto;
   -webkit-user-select: auto; user-select: auto;
 }
@@ -87,7 +87,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000000; f
 /* Action Pop Up Button */
 #toggleUiBtn {
   position: fixed; bottom: 30px; right: 20px; z-index: 10000; width: 42px; height: 42px; border-radius: 14px;
-  background: rgba(20, 20, 20, 0.98); border: 1px solid rgba(255, 255, 255, 0.1); outline: none;
+  background: #000000; border: none; outline: none;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; user-select: none; touch-action: none;
   color: #ffffff; font-size: 18px;
@@ -95,10 +95,10 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000000; f
   -webkit-tap-highlight-color: transparent;
 }
 #toggleUiBtn:hover {
-  background: rgba(40, 40, 40, 0.98);
+  background: #000000;
 }
 #toggleUiBtn.active {
-  background: rgba(20, 20, 20, 0.98);
+  background: #000000;
   color: var(--green);
 }
 #toggleUiBtn.active i {
@@ -107,7 +107,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000000; f
 
 #app-menu {
   position: fixed; z-index: 9999; display: flex; flex-direction: row; gap: 12px;
-  background: rgba(20, 20, 20, 0.98); padding: 12px; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 24px;
+  background: #000000; padding: 12px; border: none; border-radius: 24px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.8); max-width: calc(100vw - 30px);
   display: none; pointer-events: none;
 }
@@ -169,7 +169,7 @@ button.btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; c
 
 #toast {
   position: fixed; top: 40px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 20px; font-size: 13px; font-weight: 500;
-  background: rgba(20, 20, 20, 0.98); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--green);
+  background: #000000; border: none; color: var(--green);
   z-index: 40000; display: none; max-width: 90vw; text-align: center; white-space: pre-line;
   box-shadow: 0 5px 15px rgba(0,0,0,0.5);
 }
@@ -179,7 +179,7 @@ button.btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; c
 #toast.info { color: var(--blue); }
 
 #astPanel, #logPanel, #ghConfigPanel, #commitModal, #newRepoModal, #wallpaperModal {
-  position: fixed; z-index: 98; background: rgba(20, 20, 20, 0.98); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px;
+  position: fixed; z-index: 98; background: #000000; border: none; border-radius: 24px;
   padding: 24px; color: #ffffff; font-size: 13px; box-shadow: 0 10px 30px rgba(0,0,0,0.8);
   transform: translateZ(0);
 }
@@ -196,14 +196,14 @@ button.btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; c
 
 #errOverlay {
   position: fixed; top: 50px; left: 50%; transform: translateX(-50%);
-  background: rgba(40, 10, 10, 0.98); border: 1px solid rgba(255, 0, 0, 0.3); border-radius: 20px;
+  background: #000000; border: none; border-radius: 20px;
   padding: 16px; color: var(--red); font-size: 13px; font-weight: 500; font-family: 'JetBrains Mono', monospace; z-index: 25000;
   width: 90vw; max-width: 480px; display: none; white-space: pre-wrap; max-height: 40vh; overflow-y: auto;
   box-shadow: 0 10px 30px rgba(0,0,0,0.8);
 }
 
 #statusBar {
-  position: fixed; bottom: 0; left: 0; right: 0; height: 24px; background: rgba(10, 10, 10, 0.98); border-top: 1px solid rgba(255, 255, 255, 0.05);
+  position: fixed; bottom: 0; left: 0; right: 0; height: 24px; background: #000000; border-top: none;
   display: flex; align-items: center; padding: 0 12px; gap: 12px; font-size: 11px; font-weight: 500; color: #ffffff; z-index: 9990;
 }
 #statusBar .sb-item { white-space: nowrap; }
@@ -237,16 +237,16 @@ button.btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; c
 /* Find and Replace Panel */
 #searchCodeBtn {
   position: fixed; bottom: 85px; right: 20px; z-index: 10000; width: 42px; height: 42px; border-radius: 14px;
-  background: rgba(20, 20, 20, 0.98); border: 1px solid rgba(255, 255, 255, 0.1); outline: none;
+  background: #000000; border: none; outline: none;
   display: none; align-items: center; justify-content: center;
   cursor: pointer; color: #ffffff; font-size: 16px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
-#searchCodeBtn:hover { background: rgba(40, 40, 40, 0.98); color: var(--blue); }
+#searchCodeBtn:hover { background: #000000; color: var(--blue); }
 
 #fnrPanel {
   position: fixed; top: 0; left: 0; right: 0; z-index: 10001;
-  background: rgba(20, 20, 20, 0.98); border-bottom: 1px solid rgba(255,255,255,0.1);
+  background: #000000; border-bottom: none;
   padding: 16px 20px; display: none; flex-direction: column; gap: 10px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.8);
 }
