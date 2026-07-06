@@ -248,6 +248,30 @@ button.btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; c
   padding: 14px; border-radius: 20px; min-height: 90px; resize: vertical; outline: none;
 }
 #commitMsgInput:focus { background: rgba(255, 255, 255, 0.15); }
+
+/* Find and Replace Panel */
+#searchCodeBtn {
+  position: fixed; bottom: 85px; right: 20px; z-index: 10000; width: 42px; height: 42px; border-radius: 14px;
+  background: rgba(0, 0, 0, 0.65); border: 1px solid rgba(255, 255, 255, 0.1); outline: none;
+  display: none; align-items: center; justify-content: center;
+  cursor: pointer; color: #ffffff; font-size: 16px;
+  backdrop-filter: blur(35px) saturate(200%); -webkit-backdrop-filter: blur(35px) saturate(200%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); transition: background 0.2s, color 0.2s;
+}
+#searchCodeBtn:hover { background: rgba(0, 0, 0, 0.85); color: var(--blue); }
+
+#fnrPanel {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 10001;
+  background: rgba(10, 10, 10, 0.85); border-bottom: 1px solid rgba(255,255,255,0.1);
+  padding: 16px 20px; display: none; flex-direction: column; gap: 10px;
+  backdrop-filter: blur(25px) saturate(200%); -webkit-backdrop-filter: blur(25px) saturate(200%);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.fnr-row { display: flex; gap: 10px; align-items: center; }
+.fnr-row input { flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.05); color: #fff; padding: 10px 14px; border-radius: 12px; outline: none; font-family: 'JetBrains Mono', monospace; font-size: 13px; transition: background 0.2s; }
+.fnr-row input:focus { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.2); }
+.fnr-btn { background: rgba(255,255,255,0.1); border: none; color: #fff; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
+.fnr-btn:hover { background: rgba(255,255,255,0.2); }
 </style>
 </head>
 <body>
@@ -263,6 +287,28 @@ button.btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; c
 
 <iframe id="preview" sandbox="allow-scripts allow-same-origin allow-modals allow-forms allow-popups"></iframe>
 <textarea id="codeView" spellcheck="false" placeholder="Code will appear here..."></textarea>
+
+<button id="searchCodeBtn" title="Find & Replace"><i class="fa-solid fa-magnifying-glass"></i></button>
+<div id="fnrPanel">
+  <div class="fnr-row">
+    <input type="text" id="fnrFind" placeholder="Find (case-insensitive)...">
+    <span id="fnrCount" style="font-size:11px; color:rgba(255,255,255,0.5); min-width:35px; text-align:right;">0/0</span>
+  </div>
+  <div class="fnr-row">
+    <input type="text" id="fnrReplace" placeholder="Replace with...">
+  </div>
+  <div class="fnr-row" style="justify-content: space-between; margin-top: 4px;">
+    <div style="display:flex; gap:6px;">
+      <button class="fnr-btn" id="fnrPrev" title="Previous"><i class="fa-solid fa-chevron-up"></i></button>
+      <button class="fnr-btn" id="fnrNext" title="Next"><i class="fa-solid fa-chevron-down"></i></button>
+    </div>
+    <div style="display:flex; gap:6px;">
+      <button class="fnr-btn" id="fnrRep" style="color:var(--amber);">Replace</button>
+      <button class="fnr-btn" id="fnrRepAll" style="color:var(--red);">All</button>
+      <button class="fnr-btn" id="fnrClose" style="margin-left: 8px;"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+  </div>
+</div>
 
 <div id="fring"></div>
 <div id="menu-backdrop"></div>
@@ -1500,16 +1546,133 @@ document.getElementById('viewBtn').addEventListener('click', function() {
     viewMode = 'code';
     $pv.style.display = 'none';
     $codeView.style.display = 'block';
+    document.getElementById('searchCodeBtn').style.display = 'flex';
     $codeView.value = sourceContent;
     this.style.color = 'var(--amber)';
   } else {
     viewMode = 'preview';
     $codeView.style.display = 'none';
+    document.getElementById('searchCodeBtn').style.display = 'none';
+    document.getElementById('fnrPanel').style.display = 'none';
     $pv.style.display = 'block';
     
     syncEditorToSource();
     toast('Applied manual edits.');
     this.style.color = '#ffffff';
+  }
+});
+
+// Find & Replace Logic
+let fnrMatches = [];
+let fnrIndex = -1;
+let $fnrFind = document.getElementById('fnrFind');
+let $fnrReplace = document.getElementById('fnrReplace');
+
+document.getElementById('searchCodeBtn').addEventListener('click', () => {
+  document.getElementById('fnrPanel').style.display = 'flex';
+  $fnrFind.focus();
+  if ($codeView.selectionStart !== $codeView.selectionEnd) {
+    $fnrFind.value = $codeView.value.substring($codeView.selectionStart, $codeView.selectionEnd);
+    doCodeSearch();
+  }
+});
+
+document.getElementById('fnrClose').addEventListener('click', () => {
+  document.getElementById('fnrPanel').style.display = 'none';
+  $codeView.focus();
+});
+
+$fnrFind.addEventListener('input', doCodeSearch);
+$codeView.addEventListener('input', doCodeSearch);
+
+function doCodeSearch() {
+  let text = $codeView.value;
+  let q = $fnrFind.value;
+  fnrMatches = [];
+  if (!q) {
+    document.getElementById('fnrCount').textContent = '0/0';
+    return;
+  }
+  let lowerText = text.toLowerCase();
+  let lowerQ = q.toLowerCase();
+  let pos = 0;
+  while ((pos = lowerText.indexOf(lowerQ, pos)) !== -1) {
+    fnrMatches.push(pos);
+    pos += q.length;
+  }
+  if (fnrMatches.length === 0) {
+    fnrIndex = -1;
+  } else {
+    if (fnrIndex >= fnrMatches.length || fnrIndex < 0) fnrIndex = 0;
+  }
+  updateFnrUI();
+}
+
+function updateFnrUI() {
+  let el = document.getElementById('fnrCount');
+  if (fnrMatches.length === 0) el.textContent = '0/0';
+  else el.textContent = (fnrIndex + 1) + '/' + fnrMatches.length;
+}
+
+function highlightFnrCurrent() {
+  if (fnrIndex >= 0 && fnrIndex < fnrMatches.length) {
+    let start = fnrMatches[fnrIndex];
+    let q = $fnrFind.value;
+    $codeView.focus();
+    $codeView.setSelectionRange(start, start + q.length);
+    
+    let linesBefore = $codeView.value.substring(0, start).split('\n').length;
+    $codeView.scrollTop = (linesBefore - 1) * 19 - ($codeView.clientHeight / 2);
+  }
+}
+
+document.getElementById('fnrNext').addEventListener('click', () => {
+  if (fnrMatches.length === 0) return;
+  fnrIndex = (fnrIndex + 1) % fnrMatches.length;
+  updateFnrUI();
+  highlightFnrCurrent();
+});
+
+document.getElementById('fnrPrev').addEventListener('click', () => {
+  if (fnrMatches.length === 0) return;
+  fnrIndex = (fnrIndex - 1 + fnrMatches.length) % fnrMatches.length;
+  updateFnrUI();
+  highlightFnrCurrent();
+});
+
+document.getElementById('fnrRep').addEventListener('click', () => {
+  if (fnrIndex >= 0 && fnrIndex < fnrMatches.length) {
+    pushState();
+    let text = $codeView.value;
+    let q = $fnrFind.value;
+    let rep = $fnrReplace.value;
+    let start = fnrMatches[fnrIndex];
+    
+    $codeView.value = text.substring(0, start) + rep + text.substring(start + q.length);
+    sourceContent = $codeView.value;
+    doCodeSearch();
+    highlightFnrCurrent();
+  }
+});
+
+document.getElementById('fnrRepAll').addEventListener('click', () => {
+  let q = $fnrFind.value;
+  if (!q) return;
+  pushState();
+  let rep = $fnrReplace.value;
+  let regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
+  $codeView.value = $codeView.value.replace(regex, rep);
+  sourceContent = $codeView.value;
+  doCodeSearch();
+  toast('✅ Replaced all occurrences');
+});
+
+document.addEventListener('keydown', function(e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+    if (viewMode === 'code' && document.getElementById('searchCodeBtn').style.display === 'flex') {
+      e.preventDefault();
+      document.getElementById('searchCodeBtn').click();
+    }
   }
 });
 
@@ -1787,19 +1950,24 @@ function render(src, skipEditorUpdate) {
   document.getElementById('sb-status').textContent = 'rendering…';
   
   if (!src) {
-      $pv.style.display = 'none';
-      $codeView.style.display = 'none';
-      document.getElementById('emptyState').style.display = 'flex';
-  } else {
-      document.getElementById('emptyState').style.display = 'none';
-      if (viewMode === 'preview') {
-          $pv.style.display = 'block';
-          $codeView.style.display = 'none';
-      } else {
-          $pv.style.display = 'none';
-          $codeView.style.display = 'block';
-      }
-  }
+        $pv.style.display = 'none';
+        $codeView.style.display = 'none';
+        document.getElementById('emptyState').style.display = 'flex';
+        document.getElementById('searchCodeBtn').style.display = 'none';
+        document.getElementById('fnrPanel').style.display = 'none';
+    } else {
+        document.getElementById('emptyState').style.display = 'none';
+        if (viewMode === 'preview') {
+            $pv.style.display = 'block';
+            $codeView.style.display = 'none';
+            document.getElementById('searchCodeBtn').style.display = 'none';
+            document.getElementById('fnrPanel').style.display = 'none';
+        } else {
+            $pv.style.display = 'none';
+            $codeView.style.display = 'block';
+            document.getElementById('searchCodeBtn').style.display = 'flex';
+        }
+    }
   
   if (!skipEditorUpdate && $codeView.value !== src) {
     $codeView.value = src;
