@@ -67,8 +67,17 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000000; f
 
 #emptyState {
   position: fixed; inset: 0; background: #ebecf0; z-index: 0; display: flex; align-items: center; justify-content: center;
-  flex-direction: column; gap: 10px; color: #6a7c92; font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 0.1em;
+  color: #6a7c92; font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 0.1em;
 }
+
+.launcher-item { position: absolute; user-select: none; cursor: grab; display: flex; flex-direction: column; align-items: center; justify-content: center; touch-action: none; }
+.launcher-item:active { cursor: grabbing; }
+.shortcut-icon { width: 64px; height: 64px; background: #ebecf0; border-radius: 18px; display: flex; align-items: center; justify-content: center; font-size: 28px; color: var(--blue); box-shadow: 6px 6px 12px rgba(163, 177, 198, 0.6), -6px -6px 12px rgba(255, 255, 255, 0.8); position: relative; transition: transform 0.1s; }
+.shortcut-icon:active { box-shadow: inset 4px 4px 8px rgba(163, 177, 198, 0.6), inset -4px -4px 8px rgba(255, 255, 255, 0.8); }
+.shortcut-label { font-size: 11px; color: #6a7c92; font-weight: 600; margin-top: 10px; text-shadow: 0 1px 2px rgba(255,255,255,0.8); text-align: center; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shortcut-del { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; background: var(--red); color: white; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.3); z-index: 10; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+.launcher-item:hover .shortcut-del { opacity: 1; pointer-events: auto; }
+.shortcut-del.mobile-visible { opacity: 1; pointer-events: auto; }
 
 #preview { position: fixed; inset: 0; width: 100%; height: 100%; border: none; background: transparent; z-index: 1; display: none; -webkit-touch-callout: default; -webkit-user-select: auto; user-select: auto; color-scheme: dark; }
 
@@ -271,17 +280,20 @@ button.btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; c
 <body>
 
 <div id="emptyState">
-  <div id="emptyStateContent" style="display:flex; flex-direction:column; align-items:center; gap:4px; z-index:2; position:relative;">
-    <div class="clock-container">
-        <div class="analogue-face">
-            <div class="hand hour-hand" id="hourHand"></div>
-            <div class="hand minute-hand" id="minuteHand"></div>
-            <div class="hand second-hand" id="secondHand"></div>
-            <div class="center-dot"></div>
-        </div>
-        <div class="digital-display" id="digitalClock">
-            00:00:00 <span>AM</span>
-        </div>
+  <div id="emptyStateContent" style="position:relative; width:100%; height:100%; z-index:2; overflow:hidden;">
+    <div id="launcherShortcuts"></div>
+    <div id="launcherClock" class="launcher-item" style="left: calc(50% - 160px); top: calc(50% - 190px);">
+      <div class="clock-container" style="margin: 0;">
+          <div class="analogue-face">
+              <div class="hand hour-hand" id="hourHand"></div>
+              <div class="hand minute-hand" id="minuteHand"></div>
+              <div class="hand second-hand" id="secondHand"></div>
+              <div class="center-dot"></div>
+          </div>
+          <div class="digital-display" id="digitalClock">
+              00:00:00 <span>AM</span>
+          </div>
+      </div>
     </div>
   </div>
 </div>
@@ -644,12 +656,23 @@ function renderRepoTabs() {
               }
       
               if (wasDragging) {
-                isDragging = false;
-                if (clone) clone.remove();
-                btn.style.opacity = '1';
+                              isDragging = false;
+                              if (clone) {
+                                clone.style.display = 'none';
+                                let elemBelow = document.elementFromPoint(e.clientX, e.clientY);
+                  
+                                if (elemBelow && (elemBelow.id === 'emptyState' || elemBelow.closest('#emptyStateContent'))) {
+                                    if (window.addShortcut) window.addShortcut(ghRepos[btn.dataset.index], e.clientX - 32, e.clientY - 32);
+                                    clone.remove();
+                                    btn.style.opacity = '1';
+                                    return;
+                                }
+                                clone.remove();
+                              }
+                              btn.style.opacity = '1';
         
-                let newRepos = [];
-                container.querySelectorAll('.repo-item').forEach(el => {
+                              let newRepos = [];
+                              container.querySelectorAll('.repo-item').forEach(el => {
                   if (el.dataset.index !== undefined) {
                      newRepos.push(ghRepos[el.dataset.index]);
                   }
@@ -1826,6 +1849,7 @@ window.addEventListener('DOMContentLoaded', async function() {
 
   // Prevent infinite inception loops when editing the IDE's own code
   if (window.self !== window.top) {
+    initLauncher();
     updateHomeClock();
     return;
   }
@@ -1842,8 +1866,148 @@ window.addEventListener('DOMContentLoaded', async function() {
       ghFetchAllRepos();
     }
   
+    initLauncher();
     updateHomeClock();
   });
+
+  function saveLauncherSettings() {
+    settings.launcher = settings.launcher || { clock: null, shortcuts: [] };
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  }
+
+  function makeDraggable(el, onDragEnd) {
+    let isDragging = false, startX, startY, origX, origY;
+    
+    el.addEventListener('touchstart', (e) => {
+        let del = el.querySelector('.shortcut-del');
+        if (del) del.classList.toggle('mobile-visible');
+    }, {passive: true});
+
+    el.addEventListener('pointerdown', (e) => {
+      if(e.button !== 0 && e.pointerType === 'mouse') return;
+      if(e.target.closest('.shortcut-del')) return; 
+      isDragging = true;
+      startX = e.clientX; startY = e.clientY;
+      
+      let rect = el.getBoundingClientRect();
+      let parentRect = document.getElementById('emptyStateContent').getBoundingClientRect();
+      origX = rect.left - parentRect.left;
+      origY = rect.top - parentRect.top;
+      
+      el.style.left = origX + 'px';
+      el.style.top = origY + 'px';
+      el.style.right = 'auto';
+      el.style.bottom = 'auto';
+      el.style.margin = '0';
+      el.style.transform = 'none';
+
+      try { el.setPointerCapture(e.pointerId); } catch(err){}
+      e.stopPropagation();
+    });
+    el.addEventListener('pointermove', (e) => {
+      if(!isDragging) return;
+      let dx = e.clientX - startX;
+      let dy = e.clientY - startY;
+      el.style.left = (origX + dx) + 'px';
+      el.style.top = (origY + dy) + 'px';
+    });
+    el.addEventListener('pointerup', (e) => {
+      if(!isDragging) return;
+      isDragging = false;
+      try { el.releasePointerCapture(e.pointerId); } catch(err){}
+      if(onDragEnd) onDragEnd(parseInt(el.style.left), parseInt(el.style.top));
+    });
+    el.addEventListener('pointercancel', (e) => {
+      isDragging = false;
+    });
+  }
+
+  function renderShortcuts() {
+    const container = document.getElementById('launcherShortcuts');
+    if(!container) return;
+    container.innerHTML = '';
+    let sc = (settings.launcher && settings.launcher.shortcuts) || [];
+    sc.forEach((shortcut, i) => {
+      let div = document.createElement('div');
+      div.className = 'launcher-item';
+      div.style.left = shortcut.x + 'px';
+      div.style.top = shortcut.y + 'px';
+      
+      let repoName = shortcut.repo.split('/')[1] || shortcut.repo;
+      
+      div.innerHTML = `
+        <div class="shortcut-icon"><i class="fa-solid fa-code-branch"></i>
+          <div class="shortcut-del" title="Remove"><i class="fa-solid fa-xmark"></i></div>
+        </div>
+        <div class="shortcut-label" title="${shortcut.repo}">${repoName}</div>
+      `;
+      
+      div.querySelector('.shortcut-del').addEventListener('pointerdown', (e) => {
+          e.stopPropagation();
+          settings.launcher.shortcuts.splice(i, 1);
+          saveLauncherSettings();
+          renderShortcuts();
+      });
+
+      div.addEventListener('dblclick', () => {
+          ghRepo = shortcut.repo;
+          ghSaveConfig();
+          renderRepoTabs();
+          fetchFileTree(true, false);
+      });
+      
+      let lastTap = 0;
+      div.addEventListener('touchend', (e) => {
+          let currTime = new Date().getTime();
+          let tapLen = currTime - lastTap;
+          if (tapLen < 500 && tapLen > 0) {
+              ghRepo = shortcut.repo;
+              ghSaveConfig();
+              renderRepoTabs();
+              fetchFileTree(true, false);
+              e.preventDefault();
+          }
+          lastTap = currTime;
+      });
+
+      container.appendChild(div);
+      makeDraggable(div, (nx, ny) => {
+          settings.launcher.shortcuts[i].x = nx;
+          settings.launcher.shortcuts[i].y = ny;
+          saveLauncherSettings();
+      });
+    });
+  }
+
+  window.addShortcut = function(repoPath, x, y) {
+      settings.launcher = settings.launcher || { clock: null, shortcuts: [] };
+      if (!settings.launcher.shortcuts.find(s => s.repo === repoPath)) {
+          settings.launcher.shortcuts.push({ repo: repoPath, x: x, y: y });
+          saveLauncherSettings();
+          renderShortcuts();
+          toast('✅ Shortcut added to Home');
+      } else {
+          toast('ℹ️ Shortcut already exists', 'info');
+      }
+  };
+
+  function initLauncher() {
+      settings.launcher = settings.launcher || { clock: null, shortcuts: [] };
+      const clockEl = document.getElementById('launcherClock');
+      if (clockEl) {
+          if (settings.launcher.clock) {
+              clockEl.style.left = settings.launcher.clock.x + 'px';
+              clockEl.style.top = settings.launcher.clock.y + 'px';
+              clockEl.style.margin = '0';
+              clockEl.style.transform = 'none';
+          }
+          makeDraggable(clockEl, (nx, ny) => {
+              settings.launcher.clock = { x: nx, y: ny };
+              saveLauncherSettings();
+          });
+      }
+      renderShortcuts();
+  }
 
   function updateHomeClock() {
     const hourHand = document.getElementById('hourHand');
