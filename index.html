@@ -1824,6 +1824,12 @@ window.addEventListener('DOMContentLoaded', async function() {
   
   updateRepoSidebar(); 
 
+  // Prevent infinite inception loops when editing the IDE's own code
+  if (window.self !== window.top) {
+    updateHomeClock();
+    return;
+  }
+
   var fbWait = 0;
   while (!window._fbReady && fbWait < 20) { await new Promise(r => setTimeout(r, 50)); fbWait++; }
   await ghLoadConfigFromFirebase();
