@@ -255,14 +255,34 @@ button.btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; c
 .fnr-row input:focus { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.2); }
 .fnr-btn { background: rgba(255,255,255,0.1); border: none; color: #fff; padding: 8px 14px; border-radius: 10px; cursor: pointer; font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; }
 .fnr-btn:hover { background: rgba(255,255,255,0.2); }
+
+/* Neumorphic Clock Styles */
+.clock-container { width: 320px; padding: 40px 30px; background: #ebecf0; border-radius: 40px; box-shadow: 12px 12px 24px rgba(163, 177, 198, 0.6), -12px -12px 24px rgba(255, 255, 255, 0.8); display: flex; flex-direction: column; align-items: center; gap: 40px; transform: scale(0.9); }
+.analogue-face { width: 220px; height: 220px; border-radius: 50%; background: #ebecf0; box-shadow: inset 8px 8px 16px rgba(163, 177, 198, 0.6), inset -8px -8px 16px rgba(255, 255, 255, 0.8); position: relative; display: flex; justify-content: center; align-items: center; }
+.center-dot { position: absolute; width: 14px; height: 14px; background: #ebecf0; border-radius: 50%; box-shadow: 3px 3px 6px rgba(163, 177, 198, 0.6), -3px -3px 6px rgba(255, 255, 255, 0.8); z-index: 10; }
+.hand { position: absolute; bottom: 50%; left: 50%; transform-origin: bottom center; border-radius: 10px; z-index: 5; }
+.hour-hand { width: 4px; height: 28%; background: #6a7c92; margin-left: -2px; }
+.minute-hand { width: 2px; height: 38%; background: #6a7c92; margin-left: -1px; opacity: 0.8; }
+.second-hand { width: 1px; height: 42%; background: #b0b8c4; margin-left: -0.5px; }
+.digital-display { font-size: 1.8rem; font-weight: 200; color: #6a7c92; letter-spacing: 3px; text-align: center; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+.digital-display span { font-size: 0.9rem; font-weight: 300; margin-left: 5px; color: #b0b8c4; }
 </style>
 </head>
 <body>
 
 <div id="emptyState">
-  <div id="emptyStateContent" style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-    <i class="fa-solid fa-code" style="font-size:20px; color:rgba(255,255,255,0.3); margin-bottom: 4px; position:relative; z-index:2;"></i>
-    <div style="font-size:11px; color:rgba(255,255,255,0.4); position:relative; z-index:2;">WORKSPACE EMPTY</div>
+  <div id="emptyStateContent" style="display:flex; flex-direction:column; align-items:center; gap:4px; z-index:2; position:relative;">
+    <div class="clock-container">
+        <div class="analogue-face">
+            <div class="hand hour-hand" id="hourHand"></div>
+            <div class="hand minute-hand" id="minuteHand"></div>
+            <div class="hand second-hand" id="secondHand"></div>
+            <div class="center-dot"></div>
+        </div>
+        <div class="digital-display" id="digitalClock">
+            00:00:00 <span>AM</span>
+        </div>
+    </div>
   </div>
 </div>
 
@@ -1810,14 +1830,58 @@ window.addEventListener('DOMContentLoaded', async function() {
   renderRepoTabs();
   
   if (ghRepo && ghToken) {
-    syncCurrentFile();
-    fetchFileTree(false, true);
-  } else if (ghRepos.length === 0 && ghToken) {
-    ghFetchAllRepos();
-  }
-});
+      syncCurrentFile();
+      fetchFileTree(false, true);
+    } else if (ghRepos.length === 0 && ghToken) {
+      ghFetchAllRepos();
+    }
+  
+    updateHomeClock();
+  });
 
-function showControls() {
+  function updateHomeClock() {
+    const hourHand = document.getElementById('hourHand');
+    const minuteHand = document.getElementById('minuteHand');
+    const secondHand = document.getElementById('secondHand');
+    const digitalClock = document.getElementById('digitalClock');
+  
+    if (!hourHand || !digitalClock) return;
+
+    function tick() {
+      if (document.getElementById('emptyState').style.display === 'none') {
+        requestAnimationFrame(tick);
+        return;
+      }
+
+      const now = new Date();
+      let hours = now.getHours();
+      let minutes = now.getMinutes();
+      let seconds = now.getSeconds();
+      const milliseconds = now.getMilliseconds();
+
+      const secDeg = (seconds + milliseconds / 1000) * 6;
+      const minDeg = (minutes + seconds / 60) * 6;
+      const hourDeg = ((hours % 12) + minutes / 60) * 30;
+
+      secondHand.style.transform = `rotate(${secDeg}deg)`;
+      minuteHand.style.transform = `rotate(${minDeg}deg)`;
+      hourHand.style.transform = `rotate(${hourDeg}deg)`;
+
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+
+      const strHours = hours.toString().padStart(2, '0');
+      const strMinutes = minutes.toString().padStart(2, '0');
+      const strSeconds = seconds.toString().padStart(2, '0');
+
+      digitalClock.innerHTML = `${strHours}:${strMinutes}:${strSeconds} <span>${ampm}</span>`;
+      requestAnimationFrame(tick);
+    }
+    tick();
+  }
+
+  function showControls() {
   document.getElementById('sb-status').textContent = fileName;
 }
 
@@ -2671,8 +2735,193 @@ window.addEventListener('beforeunload', function(e) {
 });
 
 updateMenuPosition();
-render('', false); 
-addLog('info', 'AI Compile PRO Sovereign IDE ready.');
+sourceContent = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neumorphic Clock Web App</title>
+    <style>
+        /* Base Variables and Reset */
+        :root {
+            --bg-color: #ebecf0;
+            --shadow-light: rgba(255, 255, 255, 0.8);
+            --shadow-dark: rgba(163, 177, 198, 0.6);
+            --text-color: #6a7c92;
+            --accent-color: #b0b8c4;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: var(--bg-color);
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        /* Neumorphic Main Container */
+        .clock-container {
+            width: 320px;
+            padding: 40px 30px;
+            background: var(--bg-color);
+            border-radius: 40px;
+            box-shadow: 12px 12px 24px var(--shadow-dark), 
+                       -12px -12px 24px var(--shadow-light);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 40px;
+        }
+
+        /* Analogue Clock Face (Sunken Effect) */
+        .analogue-face {
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            background: var(--bg-color);
+            box-shadow: inset 8px 8px 16px var(--shadow-dark), 
+                        inset -8px -8px 16px var(--shadow-light);
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Center Pin */
+        .center-dot {
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            background: var(--bg-color);
+            border-radius: 50%;
+            box-shadow: 3px 3px 6px var(--shadow-dark), 
+                       -3px -3px 6px var(--shadow-light);
+            z-index: 10;
+        }
+
+        /* Clock Hands */
+        .hand {
+            position: absolute;
+            bottom: 50%;
+            left: 50%;
+            transform-origin: bottom center;
+            border-radius: 10px;
+            z-index: 5;
+        }
+
+        .hour-hand {
+            width: 4px;
+            height: 28%;
+            background: var(--text-color);
+            margin-left: -2px;
+        }
+
+        .minute-hand {
+            width: 2px;
+            height: 38%;
+            background: var(--text-color);
+            margin-left: -1px;
+            opacity: 0.8;
+        }
+
+        .second-hand {
+            width: 1px;
+            height: 42%;
+            background: var(--accent-color);
+            margin-left: -0.5px;
+        }
+
+        /* Minimalist Thin Digital Clock */
+        .digital-display {
+            font-size: 1.8rem;
+            font-weight: 200; /* Ultra-thin text */
+            color: var(--text-color);
+            letter-spacing: 3px;
+            text-align: center;
+        }
+
+        .digital-display span {
+            font-size: 0.9rem;
+            font-weight: 300;
+            margin-left: 5px;
+            color: var(--accent-color);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="clock-container">
+        <div class="analogue-face">
+            <div class="hand hour-hand" id="hourHand"></div>
+            <div class="hand minute-hand" id="minuteHand"></div>
+            <div class="hand second-hand" id="secondHand"></div>
+            <div class="center-dot"></div>
+        </div>
+
+        <div class="digital-display" id="digitalClock">
+            00:00:00 <span>AM</span>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const hourHand = document.getElementById('hourHand');
+        const minuteHand = document.getElementById('minuteHand');
+        const secondHand = document.getElementById('secondHand');
+        const digitalClock = document.getElementById('digitalClock');
+
+        function updateClock() {
+            const now = new Date();
+
+            // Get Current Time
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            let seconds = now.getSeconds();
+            const milliseconds = now.getMilliseconds();
+
+            // 1. Update Analogue Hands
+            // Adding fractions of the next unit allows for smooth, continuous movement
+            const secDeg = (seconds + milliseconds / 1000) * 6; // 360deg / 60s
+            const minDeg = (minutes + seconds / 60) * 6; // 360deg / 60m
+            const hourDeg = ((hours % 12) + minutes / 60) * 30; // 360deg / 12h
+
+            secondHand.style.transform = \`rotate(\${secDeg}deg)\`;
+            minuteHand.style.transform = \`rotate(\${minDeg}deg)\`;
+            hourHand.style.transform = \`rotate(\${hourDeg}deg)\`;
+
+            // 2. Update Digital Text
+            const ampm = hours >= 12 ? 'PM' : 'AM';
+            
+            // Format to 12-hour clock
+            hours = hours % 12;
+            hours = hours ? hours : 12; // The hour '0' should be '12'
+
+            // Pad with leading zeros
+            const strHours = hours.toString().padStart(2, '0');
+            const strMinutes = minutes.toString().padStart(2, '0');
+            const strSeconds = seconds.toString().padStart(2, '0');
+
+            // Inject into HTML
+            digitalClock.innerHTML = \`\${strHours}:\${strMinutes}:\${strSeconds} <span>\${ampm}</span>\`;
+            
+            // Call next frame
+            requestAnimationFrame(updateClock);
+        }
+
+        // Initialize clock
+        updateClock();
+    <\/script>
+</body>
+</html>`;
+render(sourceContent, false); 
+addLog('info', 'AI Compile PRO Sovereign IDE ready. Loaded default clock app.');
 </script>
 </body>
 </html>
