@@ -66,8 +66,8 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000000; f
 ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
 
 #emptyState {
-  position: fixed; inset: 0; background: #000000; z-index: 0; display: flex; align-items: center; justify-content: center;
-  flex-direction: column; gap: 10px; color: #ffffff; font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 0.1em;
+  position: fixed; inset: 0; background: #ebecf0; z-index: 0; display: flex; align-items: center; justify-content: center;
+  flex-direction: column; gap: 10px; color: #6a7c92; font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 0.1em;
 }
 
 #preview { position: fixed; inset: 0; width: 100%; height: 100%; border: none; background: transparent; z-index: 1; display: none; -webkit-touch-callout: default; -webkit-user-select: auto; user-select: auto; color-scheme: dark; }
@@ -524,11 +524,11 @@ function applyWallpaper(url) {
     stateObj.style.backgroundSize = 'contain';
     stateObj.style.backgroundPosition = 'center';
     stateObj.style.backgroundRepeat = 'no-repeat';
-    stateObj.style.backgroundColor = '#000000';
+    stateObj.style.backgroundColor = '#ebecf0';
     if(emptyContent) emptyContent.style.display = 'none';
   } else {
     stateObj.style.backgroundImage = 'none';
-    stateObj.style.backgroundColor = '#000000';
+    stateObj.style.backgroundColor = '#ebecf0';
     if(emptyContent) emptyContent.style.display = 'flex';
   }
 }
