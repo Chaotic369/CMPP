@@ -659,12 +659,25 @@ function renderRepoTabs() {
                               isDragging = false;
                               if (clone) {
                                 clone.style.display = 'none';
+                  
+                                // Scenario 11 Layer Fix: Temporarily hide the menu backdrop so the drop detects the home screen beneath it
+                                let backdrop = document.getElementById('menu-backdrop');
+                                let backdropOpen = backdrop && backdrop.classList.contains('open');
+                                if (backdropOpen) backdrop.classList.remove('open');
+                  
                                 let elemBelow = document.elementFromPoint(e.clientX, e.clientY);
                   
-                                if (elemBelow && (elemBelow.id === 'emptyState' || elemBelow.closest('#emptyStateContent'))) {
+                                if (backdropOpen) backdrop.classList.add('open');
+                  
+                                if (elemBelow && (elemBelow.id === 'emptyState' || elemBelow.closest('#emptyStateContent') || elemBelow.closest('.launcher-item'))) {
                                     if (window.addShortcut) window.addShortcut(ghRepos[btn.dataset.index], e.clientX - 32, e.clientY - 32);
                                     clone.remove();
                                     btn.style.opacity = '1';
+                      
+                                    // Auto-dismiss the menu so you instantly see your new shortcut widget!
+                                    if (typeof toggleMenu === 'function' && document.getElementById('app-menu').classList.contains('open')) {
+                                        toggleMenu();
+                                    }
                                     return;
                                 }
                                 clone.remove();
