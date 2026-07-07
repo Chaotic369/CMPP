@@ -1888,139 +1888,169 @@ window.addEventListener('DOMContentLoaded', async function() {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
   }
 
-  function makeDraggable(el, onDragEnd) {
-    let isDragging = false, startX, startY, origX, origY;
+  function makeDraggable(el, onDragEnd, onClick) {
+      let isDragging = false, hasMoved = false, startX, startY, origX, origY, holdTimer;
+
+      el.addEventListener('pointerdown', (e) => {
+        if(e.button !== 0 && e.pointerType === 'mouse') return;
+        if(e.target.closest('.shortcut-del')) return; 
+        isDragging = true; hasMoved = false;
+        startX = e.clientX; startY = e.clientY;
+      
+        let rect = el.getBoundingClientRect();
+        let parentRect = document.getElementById('emptyStateContent').getBoundingClientRect();
+        origX = rect.left - parentRect.left;
+        origY = rect.top - parentRect.top;
+      
+        el.style.left = origX + 'px';
+        el.style.top = origY + 'px';
+        el.style.right = 'auto';
+        el.style.bottom = 'auto';
+        el.style.margin = '0';
+        el.style.transform = 'none';
+
+        // Long press triggers delete mode on mobile
+        holdTimer = setTimeout(() => {
+            if (!hasMoved) {
+                let del = el.querySelector('.shortcut-del');
+                if (del) del.classList.add('mobile-visible');
+                if (navigator.vibrate) navigator.vibrate(50);
+            }
+        }, 600);
+
+        try { el.setPointerCapture(e.pointerId); } catch(err){}
+        e.stopPropagation();
+      });
     
-    el.addEventListener('touchstart', (e) => {
-        let del = el.querySelector('.shortcut-del');
-        if (del) del.classList.toggle('mobile-visible');
-    }, {passive: true});
-
-    el.addEventListener('pointerdown', (e) => {
-      if(e.button !== 0 && e.pointerType === 'mouse') return;
-      if(e.target.closest('.shortcut-del')) return; 
-      isDragging = true;
-      startX = e.clientX; startY = e.clientY;
-      
-      let rect = el.getBoundingClientRect();
-      let parentRect = document.getElementById('emptyStateContent').getBoundingClientRect();
-      origX = rect.left - parentRect.left;
-      origY = rect.top - parentRect.top;
-      
-      el.style.left = origX + 'px';
-      el.style.top = origY + 'px';
-      el.style.right = 'auto';
-      el.style.bottom = 'auto';
-      el.style.margin = '0';
-      el.style.transform = 'none';
-
-      try { el.setPointerCapture(e.pointerId); } catch(err){}
-      e.stopPropagation();
-    });
-    el.addEventListener('pointermove', (e) => {
-      if(!isDragging) return;
-      let dx = e.clientX - startX;
-      let dy = e.clientY - startY;
-      el.style.left = (origX + dx) + 'px';
-      el.style.top = (origY + dy) + 'px';
-    });
-    el.addEventListener('pointerup', (e) => {
-      if(!isDragging) return;
-      isDragging = false;
-      try { el.releasePointerCapture(e.pointerId); } catch(err){}
-      if(onDragEnd) onDragEnd(parseInt(el.style.left), parseInt(el.style.top));
-    });
-    el.addEventListener('pointercancel', (e) => {
-      isDragging = false;
-    });
-  }
-
-  function renderShortcuts() {
-    const container = document.getElementById('launcherShortcuts');
-    if(!container) return;
-    container.innerHTML = '';
-    let sc = (settings.launcher && settings.launcher.shortcuts) || [];
-    sc.forEach((shortcut, i) => {
-      let div = document.createElement('div');
-      div.className = 'launcher-item';
-      div.style.left = shortcut.x + 'px';
-      div.style.top = shortcut.y + 'px';
-      
-      let repoName = shortcut.repo.split('/')[1] || shortcut.repo;
-      
-      div.innerHTML = `
-        <div class="shortcut-icon"><i class="fa-solid fa-code-branch"></i>
-          <div class="shortcut-del" title="Remove"><i class="fa-solid fa-xmark"></i></div>
-        </div>
-        <div class="shortcut-label" title="${shortcut.repo}">${repoName}</div>
-      `;
-      
-      div.querySelector('.shortcut-del').addEventListener('pointerdown', (e) => {
-          e.stopPropagation();
-          settings.launcher.shortcuts.splice(i, 1);
-          saveLauncherSettings();
-          renderShortcuts();
+      el.addEventListener('pointermove', (e) => {
+        if(!isDragging) return;
+        let dx = e.clientX - startX;
+        let dy = e.clientY - startY;
+        if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+            hasMoved = true;
+            clearTimeout(holdTimer);
+            let del = el.querySelector('.shortcut-del');
+            if (del) del.classList.remove('mobile-visible');
+        }
+        if (hasMoved) {
+            el.style.left = (origX + dx) + 'px';
+            el.style.top = (origY + dy) + 'px';
+        }
       });
-
-      div.addEventListener('dblclick', () => {
-          ghRepo = shortcut.repo;
-          ghSaveConfig();
-          renderRepoTabs();
-          fetchFileTree(true, false);
-      });
+    
+      el.addEventListener('pointerup', (e) => {
+        if(!isDragging) return;
+        isDragging = false;
+        clearTimeout(holdTimer);
+        try { el.releasePointerCapture(e.pointerId); } catch(err){}
       
-      let lastTap = 0;
-      div.addEventListener('touchend', (e) => {
-          let currTime = new Date().getTime();
-          let tapLen = currTime - lastTap;
-          if (tapLen < 500 && tapLen > 0) {
-              ghRepo = shortcut.repo;
-              ghSaveConfig();
-              renderRepoTabs();
-              fetchFileTree(true, false);
-              e.preventDefault();
-          }
-          lastTap = currTime;
+        if (hasMoved) {
+            if(onDragEnd) onDragEnd(parseInt(el.style.left), parseInt(el.style.top));
+        } else {
+            // If no movement happened, treat as a clean click!
+            if(onClick) onClick();
+        }
       });
-
-      container.appendChild(div);
-      makeDraggable(div, (nx, ny) => {
-          settings.launcher.shortcuts[i].x = nx;
-          settings.launcher.shortcuts[i].y = ny;
-          saveLauncherSettings();
+    
+      el.addEventListener('pointercancel', (e) => {
+        isDragging = false;
+        clearTimeout(holdTimer);
       });
-    });
-  }
+    }
 
-  window.addShortcut = function(repoPath, x, y) {
-      settings.launcher = settings.launcher || { clock: null, shortcuts: [] };
-      if (!settings.launcher.shortcuts.find(s => s.repo === repoPath)) {
-          settings.launcher.shortcuts.push({ repo: repoPath, x: x, y: y });
-          saveLauncherSettings();
-          renderShortcuts();
-          toast('✅ Shortcut added to Home');
-      } else {
-          toast('ℹ️ Shortcut already exists', 'info');
-      }
-  };
+    function renderShortcuts() {
+      const container = document.getElementById('launcherShortcuts');
+      if(!container) return;
+      container.innerHTML = '';
+      let sc = (settings.launcher && settings.launcher.shortcuts) || [];
+      sc.forEach((shortcut, i) => {
+        let div = document.createElement('div');
+        div.className = 'launcher-item';
+        div.style.left = shortcut.x + 'px';
+        div.style.top = shortcut.y + 'px';
+      
+        let repoName = shortcut.repo.split('/')[1] || shortcut.repo;
+      
+        div.innerHTML = `
+          <div class="shortcut-icon"><i class="fa-solid fa-code-branch"></i>
+            <div class="shortcut-del" title="Remove"><i class="fa-solid fa-xmark"></i></div>
+          </div>
+          <div class="shortcut-label" title="${shortcut.repo}">${repoName}</div>
+        `;
+      
+        div.querySelector('.shortcut-del').addEventListener('pointerdown', (e) => {
+            e.stopPropagation();
+            settings.launcher.shortcuts.splice(i, 1);
+            saveLauncherSettings();
+            renderShortcuts();
+        });
 
-  function initLauncher() {
-      settings.launcher = settings.launcher || { clock: null, shortcuts: [] };
-      const clockEl = document.getElementById('launcherClock');
-      if (clockEl) {
-          if (settings.launcher.clock) {
-              clockEl.style.left = settings.launcher.clock.x + 'px';
-              clockEl.style.top = settings.launcher.clock.y + 'px';
-              clockEl.style.margin = '0';
-              clockEl.style.transform = 'none';
-          }
-          makeDraggable(clockEl, (nx, ny) => {
-              settings.launcher.clock = { x: nx, y: ny };
-              saveLauncherSettings();
-          });
-      }
-      renderShortcuts();
-  }
+        container.appendChild(div);
+      
+        makeDraggable(div, (nx, ny) => {
+            settings.launcher.shortcuts[i].x = nx;
+            settings.launcher.shortcuts[i].y = ny;
+            saveLauncherSettings();
+        }, () => {
+            let del = div.querySelector('.shortcut-del');
+            if (del && del.classList.contains('mobile-visible')) {
+                // Dismiss delete mode if clicked while shaking/active
+                del.classList.remove('mobile-visible');
+                return;
+            }
+          
+            toast('🚀 Launching ' + repoName + '...', 'info');
+            showProgress(20);
+            ghRepo = shortcut.repo;
+            ghSaveConfig();
+          
+            // Auto-open sidebar so user sees visual progress
+            repoCollapsed = false;
+            localStorage.setItem('repo_collapsed', repoCollapsed);
+          
+            renderRepoTabs();
+            fetchFileTree(true, false);
+        });
+      });
+    }
+
+    window.addShortcut = function(repoPath, x, y) {
+        settings.launcher = settings.launcher || { clock: null, shortcuts: [] };
+        if (!settings.launcher.shortcuts.find(s => s.repo === repoPath)) {
+            settings.launcher.shortcuts.push({ repo: repoPath, x: x, y: y });
+            saveLauncherSettings();
+            renderShortcuts();
+            toast('✅ Shortcut added to Home');
+        } else {
+            toast('ℹ️ Shortcut already exists', 'info');
+        }
+    };
+
+    function initLauncher() {
+        settings.launcher = settings.launcher || { clock: null, shortcuts: [] };
+      
+        // Tap background to dismiss red delete buttons
+        document.getElementById('emptyState').addEventListener('pointerdown', (e) => {
+            if (!e.target.closest('.launcher-item')) {
+                document.querySelectorAll('.shortcut-del.mobile-visible').forEach(del => del.classList.remove('mobile-visible'));
+            }
+        });
+      
+        const clockEl = document.getElementById('launcherClock');
+        if (clockEl) {
+            if (settings.launcher.clock) {
+                clockEl.style.left = settings.launcher.clock.x + 'px';
+                clockEl.style.top = settings.launcher.clock.y + 'px';
+                clockEl.style.margin = '0';
+                clockEl.style.transform = 'none';
+            }
+            makeDraggable(clockEl, (nx, ny) => {
+                settings.launcher.clock = { x: nx, y: ny };
+                saveLauncherSettings();
+            });
+        }
+        renderShortcuts();
+    }
 
   function updateHomeClock() {
     const hourHand = document.getElementById('hourHand');
