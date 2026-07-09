@@ -49,9 +49,9 @@
 :root {
   --blue: #5c9dff; --green: #39d353; --red: #f85149;
   --amber: #e3b341; --purple: #bc8cff; --teal: #2dd4bf;
-  --surface: #000000; 
-  --elevated: #111111; 
-  --panel: #0a0a0a;
+  --surface: #000432; 
+  --elevated: #070b4a; 
+  --panel: #030835;
   --border: transparent;
   --tp: #ffffff; 
   --tm: #ffffff; 
@@ -59,7 +59,7 @@
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { width: 100%; height: 100%; overflow: hidden; background: #000000; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #ffffff; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--surface); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #ffffff; }
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -74,7 +74,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #000000; f
 
 #codeView {
   position: fixed; inset: 0; width: 100%; height: calc(100% - 22px);
-  background: #000000; color: #ffffff; font-family: 'JetBrains Mono', monospace; font-size: 13px;
+  background: var(--surface); color: #ffffff; font-family: 'JetBrains Mono', monospace; font-size: 13px;
   padding: 20px; border: none; outline: none; resize: none; z-index: 1; display: none; white-space: pre; overflow: auto;
   -webkit-user-select: auto; user-select: auto;
 }
@@ -504,11 +504,11 @@ function applyWallpaper(url) {
     stateObj.style.backgroundSize = 'contain';
     stateObj.style.backgroundPosition = 'center';
     stateObj.style.backgroundRepeat = 'no-repeat';
-    stateObj.style.backgroundColor = '#000000';
+    stateObj.style.backgroundColor = 'var(--surface)';
     if(emptyContent) emptyContent.style.display = 'none';
   } else {
     stateObj.style.backgroundImage = 'none';
-    stateObj.style.backgroundColor = '#000000';
+    stateObj.style.backgroundColor = 'var(--surface)';
     if(emptyContent) emptyContent.style.display = 'flex';
   }
 }
@@ -1540,7 +1540,6 @@ $backdrop.addEventListener('click', toggleMenu);
 // VIEW MODE TOGGLE
 document.getElementById('viewBtn').addEventListener('click', function() {
   toggleMenu();
-  if (!sourceContent && !$codeView.value) return; 
 
   if (viewMode === 'preview') {
     viewMode = 'code';
@@ -2372,21 +2371,36 @@ function doPaste(raw) {
   }
 
   if (!sourceContent && (/<!doctype\s+html/i.test(raw) || /<html[\s>]/i.test(raw))) {
-    sourceContent = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    showControls();
-    render(sourceContent, false);
-    toast('Initialised from clipboard!');
-    addLog('ok', 'Initialised from full HTML paste (' + (sourceContent.length / 1024).toFixed(1) + ' KB).');
-    updateStatusBar();
-    return;
-  }
+      sourceContent = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      showControls();
+      render(sourceContent, false);
+      toast('Initialised from clipboard!');
+      addLog('ok', 'Initialised from full HTML paste (' + (sourceContent.length / 1024).toFixed(1) + ' KB).');
+      updateStatusBar();
+      return;
+    }
 
-  if (!sourceContent) {
-    toast('Load a file first, or paste a full HTML page.', 'warn', 4000);
-    return;
-  }
+    var blocks = parseAllBlocks(raw);
+  
+    if (!sourceContent && blocks.length === 0) {
+      sourceContent = raw.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      showControls();
+      $codeView.value = sourceContent;
+      if (viewMode === 'preview') {
+         document.getElementById('viewBtn').click();
+      } else {
+         render(sourceContent, false);
+      }
+      toast('Initialised from pasted snippet!');
+      addLog('ok', 'Started new file from clipboard paste.');
+      updateStatusBar();
+      return;
+    }
 
-  var blocks = parseAllBlocks(raw);
+    if (!sourceContent) {
+      toast('Load a file first, or paste a full HTML page.', 'warn', 4000);
+      return;
+    }
   if (blocks.length === 0) {
     if (raw.includes('<') || raw.includes('function') || raw.includes('{')) {
       toast('No ===SPLIT=== found.\nDid you forget to use the Super Prompt?\nIf pasting full HTML, paste when no file is loaded.', 'err', 7000);
