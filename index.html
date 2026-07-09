@@ -8,11 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-<link rel="stylesheet" href="https:updateMenuPosition();
-sourceContent = '';
-render('', false); 
-addLog('info', 'AI Compile PRO Sovereign IDE ready.');
-</script>cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <script type="module">
   if ('serviceWorker' in navigator) {
@@ -1292,28 +1288,28 @@ function renderFileTreeUI() {
     rootFiles = rootFiles.concat(otherFiles);
 
     function getIcon(path) {
-        let ext = path.split('.').pop().toLowerCase();
-        if(ext === 'html') return {i: 'fa-html5', c: 'var(--red)'};
-        if(ext === 'js') return {i: 'fa-js', c: 'var(--amber)'};
-        if(ext === 'css') return {i: 'fa-css3-alt', c: 'var(--blue)'};
-        if(ext === 'json') return {i: 'fa-code', c: 'var(--green)'};
-        if(['png','jpg','jpeg','gif','svg','webp','ico'].includes(ext)) return {i: 'fa-image', c: 'var(--purple)'};
-        return {i: 'fa-file-code', c: '#ffffff'};
-    }
+            let ext = path.split('.').pop().toLowerCase();
+            if(ext === 'html') return {i: 'fa-brands fa-html5', c: 'var(--red)'};
+            if(ext === 'js') return {i: 'fa-brands fa-js', c: 'var(--amber)'};
+            if(ext === 'css') return {i: 'fa-brands fa-css3-alt', c: 'var(--blue)'};
+            if(ext === 'json') return {i: 'fa-solid fa-code', c: 'var(--green)'};
+            if(['png','jpg','jpeg','gif','svg','webp','ico'].includes(ext)) return {i: 'fa-solid fa-image', c: 'var(--purple)'};
+            return {i: 'fa-regular fa-file-code', c: '#ffffff'};
+        }
 
-    function renderItem(f, isChild = false) {
-        const isTarget = f.path === ghFilePath;
-        const name = f.path.split('/').pop();
-        const icon = getIcon(f.path);
-        const hasChildren = !!fileNesting[f.path];
-        const isExpanded = window.nestedExpanded[f.path];
+        function renderItem(f, isChild = false) {
+            const isTarget = f.path === ghFilePath;
+            const name = f.path.split('/').pop();
+            const icon = getIcon(f.path);
+            const hasChildren = !!fileNesting[f.path];
+            const isExpanded = window.nestedExpanded[f.path];
         
-        let str = `<div class="repo-item file-item ${isTarget ? 'active' : ''}" style="${isChild ? 'margin-left:14px; border-left:1px solid rgba(255, 255, 255, 0.1); border-radius:0;' : ''}" onclick="selectFileFromTree('${f.path}')" ondblclick="if(${hasChildren}) toggleNesting('${f.path}', event)" title="${f.path}">
-            <div style="display:flex; align-items:center; overflow:hidden; flex:1;">
-                ${hasChildren ? `<i class="fa-solid fa-chevron-${isExpanded ? 'down' : 'right'}" style="font-size:9px; color:rgba(255,255,255,0.6); margin-right:6px; cursor:pointer;" onclick="toggleNesting('${f.path}', event)"></i>` : (isChild ? '' : `<i class="fa-solid fa-minus" style="font-size:9px; color:transparent; margin-right:6px;"></i>`)}
-                <i class="fa-brands ${icon.i} fa-regular fa-file" style="margin-right:8px; font-size:14px; color:${isTarget ? 'var(--blue)' : icon.c};"></i>
-                <span style="font-size:12px; color:${isTarget ? 'var(--blue)' : '#ffffff'}; font-weight: ${isTarget ? '600' : '400'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${name}</span>
-            </div>
+            let str = `<div class="repo-item file-item ${isTarget ? 'active' : ''}" style="${isChild ? 'margin-left:14px; border-left:1px solid rgba(255, 255, 255, 0.1); border-radius:0;' : ''}" onclick="selectFileFromTree('${f.path}')" ondblclick="if(${hasChildren}) toggleNesting('${f.path}', event)" title="${f.path}">
+                <div style="display:flex; align-items:center; overflow:hidden; flex:1;">
+                    ${hasChildren ? `<i class="fa-solid fa-chevron-${isExpanded ? 'down' : 'right'}" style="font-size:9px; color:rgba(255,255,255,0.6); margin-right:6px; cursor:pointer;" onclick="toggleNesting('${f.path}', event)"></i>` : (isChild ? '' : `<i class="fa-solid fa-minus" style="font-size:9px; color:transparent; margin-right:6px;"></i>`)}
+                    <i class="${icon.i}" style="margin-right:8px; font-size:14px; color:${isTarget ? 'var(--blue)' : icon.c};"></i>
+                    <span style="font-size:12px; color:${isTarget ? 'var(--blue)' : '#ffffff'}; font-weight: ${isTarget ? '600' : '400'}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${name}</span>
+                </div>
             <div class="repo-actions">
                 <button class="repo-btn" title="Rename File" onclick="renameFile('${f.path}', event)"><i class="fa-solid fa-pen"></i></button>
                 <button class="repo-btn del" title="Delete File" onclick="deleteFile('${f.path}', event)"><i class="fa-solid fa-trash"></i></button>
