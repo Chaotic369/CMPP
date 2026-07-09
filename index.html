@@ -12,13 +12,6 @@
 sourceContent = '';
 render('', false); 
 addLog('info', 'AI Compile PRO Sovereign IDE ready.');
-
-document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible" && ghRepo && ghToken) {
-    syncCurrentFile();
-    addLog('info', 'Auto-sync triggered on resume.');
-  }
-});
 </script>cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <script type="module">
