@@ -112,6 +112,13 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--surf
   background: rgba(22, 22, 22, 0.85);
   color: var(--green);
 }
+#toggleUiBtn:hover {
+  background: rgba(33, 33, 33, 0.75);
+}
+#toggleUiBtn.active {
+  background: rgba(22, 22, 22, 0.85);
+  color: var(--green);
+}
 #toggleUiBtn.active i {
   transform: rotate(45deg);
 }
@@ -248,12 +255,12 @@ button.btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; c
 /* Find and Replace Panel */
 #searchCodeBtn {
   position: fixed; bottom: 85px; right: 20px; z-index: 10000; width: 42px; height: 42px; border-radius: 14px;
-  background: #000000; border: none; outline: none;
+  background: rgba(22, 22, 22, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: none !important; outline: none !important;
   display: none; align-items: center; justify-content: center;
   cursor: pointer; color: #ffffff; font-size: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
 }
-#searchCodeBtn:hover { background: #000000; color: var(--blue); }
+#searchCodeBtn:hover { background: rgba(33, 33, 33, 0.75); color: var(--blue); }
 
 #fnrPanel {
   position: fixed; top: 0; left: 0; right: 0; z-index: 10001;
