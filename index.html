@@ -98,18 +98,18 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--surf
 /* Action Pop Up Button */
 #toggleUiBtn {
   position: fixed; bottom: 130px; right: 20px; z-index: 10000; width: 42px; height: 42px; border-radius: 14px;
-  background: #000000; border: none; outline: none;
+  background: rgba(22, 22, 22, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: none !important; outline: none !important;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; user-select: none; touch-action: none;
   color: #ffffff; font-size: 18px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
   -webkit-tap-highlight-color: transparent;
 }
 #toggleUiBtn:hover {
-  background: #000000;
+  background: rgba(33, 33, 33, 0.75);
 }
 #toggleUiBtn.active {
-  background: #000000;
+  background: rgba(22, 22, 22, 0.85);
   color: var(--green);
 }
 #toggleUiBtn.active i {
@@ -257,9 +257,9 @@ button.btn:disabled { opacity: 0.3; cursor: not-allowed; pointer-events: none; c
 
 #fnrPanel {
   position: fixed; top: 0; left: 0; right: 0; z-index: 10001;
-  background: #000000; border-bottom: none;
+  background: rgba(22, 22, 22, 0.65); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: none !important; outline: none !important;
   padding: 16px 20px; display: none; flex-direction: column; gap: 10px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.4);
 }
 .fnr-row { display: flex; gap: 10px; align-items: center; }
 .fnr-row input { flex: 1; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.05); color: #fff; padding: 10px 14px; border-radius: 12px; outline: none; font-family: 'JetBrains Mono', monospace; font-size: 13px; }
