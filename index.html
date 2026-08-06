@@ -3285,6 +3285,7 @@ window.syncCurrentFile = async function() {
 };
 
 document.getElementById('ghSyncBtn').addEventListener('click', async function() {
+  await ghFetchAllRepos();
   await syncCurrentFile();
 });
 
