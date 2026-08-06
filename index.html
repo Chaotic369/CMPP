@@ -2391,8 +2391,12 @@ window.addEventListener('DOMContentLoaded', async function() {
   var fbWait = 0;
   while (!window._fbReady && fbWait < 20) { await new Promise(r => setTimeout(r, 50)); fbWait++; }
   
-  showMenuLoader('Syncing Configuration...');
-    await ghLoadConfigFromFirebase();
+  try {
+    showMenuLoader('Syncing Configuration...');
+    await Promise.race([
+      ghLoadConfigFromFirebase(),
+      new Promise(r => setTimeout(r, 6000))
+    ]);
     renderRepoTabs();
   
     if (ghRepo && ghToken) {
@@ -2405,13 +2409,18 @@ window.addEventListener('DOMContentLoaded', async function() {
       } catch(e) {}
     
       showMenuLoader('Loading Repository...');
-    await syncCurrentFile();
-    await fetchFileTree(false, true);
-  } else if (ghRepos.length === 0 && ghToken) {
-    showMenuLoader('Fetching Repositories...');
-    await ghFetchAllRepos();
+      await syncCurrentFile();
+      await fetchFileTree(false, true);
+    } else if (ghRepos.length === 0 && ghToken) {
+      showMenuLoader('Fetching Repositories...');
+      await ghFetchAllRepos();
+    }
+  } catch (err) {
+    console.error("Initialization Error:", err);
+    toast('Initialization error: ' + err.message, 'err', 5000);
+  } finally {
+    hideMenuLoader();
   }
-  hideMenuLoader();
 });
 
 function showControls() {
