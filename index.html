@@ -424,18 +424,10 @@ select.bm-select option { background: var(--elevated); color: #fff; }
   </div>
 
   <div class="gh-actions">
-      <button id="bmCancelBtn"><i class="fa-solid fa-xmark"></i> Cancel</button>
-      <button id="bmCompileBtn" style="color:var(--green); background: rgba(57, 211, 83, 0.2);"><i class="fa-solid fa-rocket"></i> Build App</button>
-    </div>
-    <div style="margin-top:20px; border-top:1px solid rgba(255,255,255,0.1); padding-top:16px;">
-      <label style="display:block; font-size:13px; font-weight:600; margin-bottom:10px; color:var(--blue);">Artifacts & Logs</label>
-      <div style="display:flex; flex-direction:column; gap:8px;">
-        <button id="downloadApkBtn" style="background: rgba(45, 212, 191, 0.1); border: 1px solid rgba(45, 212, 191, 0.2); color: var(--teal); padding: 10px 16px; border-radius: 12px; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.2s;"><i class="fa-solid fa-file-zipper" style="margin-right:8px; width:16px;"></i> Download Latest APK</button>
-        <button id="downloadExeBtn" style="background: rgba(45, 212, 191, 0.1); border: 1px solid rgba(45, 212, 191, 0.2); color: var(--teal); padding: 10px 16px; border-radius: 12px; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.2s;"><i class="fa-solid fa-file-archive" style="margin-right:8px; width:16px;"></i> Download Latest EXE Zip</button>
-        <button id="pullApkLogBtn" style="background: rgba(248, 81, 73, 0.1); border: 1px solid rgba(248, 81, 73, 0.2); color: var(--red); padding: 10px 16px; border-radius: 12px; font-weight: 600; cursor: pointer; text-align: left; transition: all 0.2s;" onclick="fetchLatestFailedLog('build-native-apk.yml')"><i class="fa-solid fa-file-waveform" style="margin-right:8px; width:16px;"></i> Pull Last Build Log</button>
-      </div>
-    </div>
+    <button id="bmCancelBtn"><i class="fa-solid fa-xmark"></i> Cancel</button>
+    <button id="bmCompileBtn" style="color:var(--green); background: rgba(57, 211, 83, 0.2);"><i class="fa-solid fa-rocket"></i> Build App</button>
   </div>
+</div>
 
 <style>
     #buildProgressOverlay { transition: all 0.3s ease; }
